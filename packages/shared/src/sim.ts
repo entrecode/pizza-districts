@@ -1,5 +1,6 @@
-// Shared types and Zod schemas used by both web and edge surfaces.
-// Edge Functions pull from here via relative paths; the web app via @pd/shared.
+// Re-export of @pd/sim's public type surface for the web app + Edge Functions.
+// ADR-0003 §6/§8 — keep one canonical declaration in @pd/sim, mirrored here so
+// callers can `import type { SimState } from "@pd/shared"`.
 
 export type {
   AiCompetitor,
@@ -20,4 +21,4 @@ export type {
   TickRecord,
   WeatherCode,
   WorldState,
-} from "./sim";
+} from "@pd/sim";
