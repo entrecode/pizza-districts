@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "allowJs": true,
+    "plugins": [{ "name": "next" }],
+    "paths": {
+      "@/*": ["./*"],
+      "@pd/shared": ["../../packages/shared/src/index.ts"],
+      "@pd/shared/*": ["../../packages/shared/src/*"],
+      "@pd/sim": ["../../packages/sim/src/index.ts"],
+      "@pd/sim/*": ["../../packages/sim/src/*"]
+    },
+    "baseUrl": "."
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules", ".next", "dist"]
+}

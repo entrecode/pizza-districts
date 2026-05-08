@@ -1,0 +1,47 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build output
+.next/
+out/
+dist/
+build/
+
+# typescript
+*.tsbuildinfo
+# next-env.d.ts is committed so CI typecheck works without `next build`
+
+# env
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# coverage / test
+coverage/
+.vitest-cache/
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# editors
+.idea/
+.vscode/
+*.swp
+
+# os
+.DS_Store
+Thumbs.db
+
+# vercel
+.vercel/
+
+# supabase local
+supabase/.branches
+supabase/.temp
