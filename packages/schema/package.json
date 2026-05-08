@@ -1,0 +1,25 @@
+{
+  "name": "@pd/schema",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./sim-rpc.d.ts",
+  "types": "./sim-rpc.d.ts",
+  "exports": {
+    ".": {
+      "types": "./sim-rpc.d.ts"
+    },
+    "./sim-rpc": {
+      "types": "./sim-rpc.d.ts"
+    }
+  },
+  "files": [
+    "sim-rpc.d.ts"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

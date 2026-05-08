@@ -41,3 +41,36 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+
+  db-test:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    env:
+      PG_HOST: 127.0.0.1
+      PG_PORT: "5432"
+      PG_USER: postgres
+      PG_PASSWORD: ""
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Postgres 14 + pgTAP + pg_prove
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            postgresql-14 \
+            postgresql-contrib-14 \
+            postgresql-14-pgtap \
+            postgresql-client-14 \
+            pgtap
+
+      - name: Configure Postgres for trust auth on 127.0.0.1
+        run: |
+          sudo systemctl start postgresql
+          PG_HBA=$(sudo -u postgres psql -tAc "show hba_file")
+          # Prepend a trust rule so it matches before any default scram/md5
+          # entry. Throwaway CI database; never run trust auth elsewhere.
+          sudo sh -c "printf 'host all all 127.0.0.1/32 trust\nhost all all ::1/128 trust\n' > '$PG_HBA'.new && cat '$PG_HBA' >> '$PG_HBA'.new && mv '$PG_HBA'.new '$PG_HBA'"
+          sudo systemctl restart postgresql
+
+      - name: Run db tests
+        run: bash scripts/db-test.sh
