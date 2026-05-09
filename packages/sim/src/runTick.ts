@@ -21,14 +21,7 @@ import {
   step8_staff,
   step9_bankruptcy,
 } from "./steps";
-import type {
-  LookupTables,
-  RunTickResult,
-  SimState,
-  TickEvent,
-  TickInputs,
-  TickRecord,
-} from "./types";
+import type { LookupTables, RunTickResult, SimState, TickEvent, TickInputs } from "./types";
 
 export function runTick(
   inputState: SimState,
@@ -58,12 +51,8 @@ export function runTick(
 
   // Step 3 — marketing
   events.push(
-    ...step3_marketing(
-      state.marketing,
-      state.constants.marketingDecayPerDay,
-      dayIndex,
-      luts,
-    ).events,
+    ...step3_marketing(state.marketing, state.constants.marketingDecayPerDay, dayIndex, luts)
+      .events,
   );
 
   // Step 4 — demand
@@ -84,23 +73,14 @@ export function runTick(
 
   // Step 7 — rating-30 rolling avg
   events.push(
-    ...step7_rating30(
-      state.brand,
-      state.locations,
-      state.constants.rollingWindow,
-      dayIndex,
-    ).events,
+    ...step7_rating30(state.brand, state.locations, state.constants.rollingWindow, dayIndex).events,
   );
 
   // Step 8 — staff (reserved no-op)
   events.push(...step8_staff().events);
 
   // Step 9 — bankruptcy
-  const bankruptcy = step9_bankruptcy(
-    state.brand,
-    state.constants.bankruptcyWindowDays,
-    dayIndex,
-  );
+  const bankruptcy = step9_bankruptcy(state.brand, state.constants.bankruptcyWindowDays, dayIndex);
   events.push(...bankruptcy.events);
   ledgerDelta.push(...bankruptcy.ledgerDelta);
 

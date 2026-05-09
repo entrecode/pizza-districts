@@ -12,12 +12,7 @@ import { chainHash, ZERO_HASH } from "./hash";
 import { brandSeed, daySeed } from "./rng/seed";
 import { replay } from "./replay";
 import { runTick } from "./runTick";
-import {
-  CANONICAL_STEP_ORDER,
-  step1_weather,
-  step5_finance,
-  step7_rating30,
-} from "./steps";
+import { CANONICAL_STEP_ORDER, step1_weather, step5_finance, step7_rating30 } from "./steps";
 import { EMPTY_LUTS, type SimState } from "./types";
 
 function buildFixture(): SimState {

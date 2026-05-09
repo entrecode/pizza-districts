@@ -3,13 +3,7 @@
 
 import { canonicalJson } from "../canonical";
 import { chainHash } from "../hash";
-import type {
-  BrandState,
-  LedgerEntry,
-  SimState,
-  TickEvent,
-  TickRecord,
-} from "../types";
+import type { BrandState, LedgerEntry, SimState, TickEvent, TickRecord } from "../types";
 
 export function step11_emit(
   state: SimState,

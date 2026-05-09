@@ -16,9 +16,7 @@ export function step5_finance(
 ): { events: TickEvent[]; ledgerDelta: LedgerEntry[] } {
   const events: TickEvent[] = [];
   const ledgerDelta: LedgerEntry[] = [];
-  const sortedLocations = [...locations].sort((a, b) =>
-    a.id < b.id ? -1 : a.id > b.id ? 1 : 0,
-  );
+  const sortedLocations = [...locations].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   let totalRevenue = 0;
   let totalCogs = 0;
   let totalRent = 0;

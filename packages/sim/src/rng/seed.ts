@@ -64,8 +64,5 @@ export const aiSeedFor = (worldSeed: bigint, aiBrandId: string, dayIndex: number
 export const poiSeedFor = (worldSeed: bigint, poiId: string): bigint =>
   deriveU64("poi", worldSeed, "poi", poiId);
 
-export const reviewSeedFor = (
-  daySeedValue: bigint,
-  locationId: string,
-  dayIndex: number,
-): bigint => deriveU64("review", daySeedValue, locationId, dayIndex, "review");
+export const reviewSeedFor = (daySeedValue: bigint, locationId: string, dayIndex: number): bigint =>
+  deriveU64("review", daySeedValue, locationId, dayIndex, "review");

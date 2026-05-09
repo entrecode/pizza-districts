@@ -8,11 +8,7 @@ const TEXT_ENCODER = new TextEncoder();
 
 export const ZERO_HASH: string = "0".repeat(64);
 
-export function chainHash(
-  prevHashHex: string,
-  eventsJson: string,
-  stateDeltaJson: string,
-): string {
+export function chainHash(prevHashHex: string, eventsJson: string, stateDeltaJson: string): string {
   const prev = hexToBytes(prevHashHex);
   const events = TEXT_ENCODER.encode(eventsJson);
   const delta = TEXT_ENCODER.encode(stateDeltaJson);

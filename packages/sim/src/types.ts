@@ -66,13 +66,7 @@ export interface SimState {
   ledger: LedgerEntry[];
 }
 
-export type LedgerCategory =
-  | "sales"
-  | "cogs"
-  | "rent"
-  | "payroll"
-  | "marketing"
-  | "settlement";
+export type LedgerCategory = "sales" | "cogs" | "rent" | "payroll" | "marketing" | "settlement";
 
 export interface LedgerEntry {
   readonly tickIndex: number;

@@ -11,3 +11,10 @@ pnpm-lock.yaml
 # must not be reformatted independently.
 packages/sim-test/reference-vectors/
 packages/sim-test/artifacts/
+
+# Build-time-generated LUT arrays. SHA-256 of the canonical CSV is locked in
+# packages/sim/scripts/luts.lock.json; reformatting would diverge the source
+# from the generator output. Re-run `pnpm --filter @pd/sim generate-luts` to
+# refresh, never hand-edit.
+packages/sim/src/lut/exp_clamped_q12.ts
+packages/sim/src/lut/one_minus_exp_neg_q16.ts

@@ -20,10 +20,7 @@ export function step6_reviews(
     const rng = streamRng("reviews", seed, dayIndex, loc.id);
     // Satisfaction proxy: condition + (served / capacity) noise.
     const noise = rng.nextIntBelow(201) - 100; // [-100, +100], scaled × 1
-    const satisfactionScaled = Math.min(
-      1000,
-      Math.max(0, loc.conditionScaled + noise),
-    );
+    const satisfactionScaled = Math.min(1000, Math.max(0, loc.conditionScaled + noise));
     // r_d = round(1 + 4 × satisfaction). Satisfaction is /1000; result × 1000.
     const ratingDayScaled = 1000 + Math.floor((4000 * satisfactionScaled) / 1000);
     loc.ratingScaled = ratingDayScaled;

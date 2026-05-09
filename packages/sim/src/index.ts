@@ -44,6 +44,24 @@ export {
 
 export { freezeClock, freezeRng, type FrozenClock, type FrozenRng } from "./shims";
 
+export {
+  expClampedQ12,
+  oneMinusExpNegQ16,
+  LUTS,
+  EXP_CLAMPED_Q12,
+  EXP_CLAMPED_Q12_LEN,
+  EXP_CLAMPED_Q12_X_MIN_Q10,
+  EXP_CLAMPED_Q12_X_MAX_Q10,
+  EXP_CLAMPED_Q12_Y_MAX,
+  EXP_CLAMPED_Q12_Y_MIN,
+  ONE_MINUS_EXP_NEG_Q16,
+  ONE_MINUS_EXP_NEG_Q16_LEN,
+  ONE_MINUS_EXP_NEG_Q16_X_MIN_Q8,
+  ONE_MINUS_EXP_NEG_Q16_X_MAX_Q8,
+  ONE_MINUS_EXP_NEG_Q16_Y_MAX,
+  ONE_MINUS_EXP_NEG_Q16_Y_MIN,
+} from "./lut";
+
 export { canonicalJson } from "./canonical";
 export { chainHash, ZERO_HASH } from "./hash";
 

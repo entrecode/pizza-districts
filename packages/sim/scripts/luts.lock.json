@@ -1,0 +1,23 @@
+{
+  "generator": "packages/sim/scripts/generate-luts.mjs",
+  "version": 1,
+  "protocol": "sha256-of-decimal-csv-no-trailing-newline",
+  "files": {
+    "src/lut/exp_clamped_q12.ts": {
+      "lenEntries": 3584,
+      "xMinQ10": -2560,
+      "xMaxQ10": 1023,
+      "yMin": 409,
+      "yMax": 8192,
+      "sha256OfCsv": "ac1b17a2c5743cea403a6b4773ba492413d9b80b38925e33da9e2b94c5f15690"
+    },
+    "src/lut/one_minus_exp_neg_q16.ts": {
+      "lenEntries": 2560,
+      "xMinQ8": 0,
+      "xMaxQ8": 2559,
+      "yMin": 0,
+      "yMax": 65535,
+      "sha256OfCsv": "1e5ba051c79a02801166246be1b5486ed61a8cb992c1175447196050750af00b"
+    }
+  }
+}
