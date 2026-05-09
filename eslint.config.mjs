@@ -1,5 +1,6 @@
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
+import pizSim from "./packages/eslint-plugin-piz-sim/src/index.js";
 
 export default tseslint.config(
   {
@@ -11,6 +12,10 @@ export default tseslint.config(
       "**/coverage/**",
       "**/*.tsbuildinfo",
       "**/next-env.d.ts",
+      // Auto-generated LUTs: PIZ-35 emits these from generate-luts.mjs and
+      // they're already verified by the lock-file CI gate (`check-luts`).
+      "packages/sim/src/lut/exp_clamped_q12.ts",
+      "packages/sim/src/lut/one_minus_exp_neg_q16.ts",
     ],
   },
   js.configs.recommended,
@@ -71,5 +76,22 @@ export default tseslint.config(
         },
       ],
     },
+  },
+  // PIZ-36 — determinism-harness §7 / ADR-0003 §4.1 banned-API list.
+  // Enforced as `error` for the engine's reducer source. The build-time
+  // LUT generator (packages/sim/scripts/**) is allowlisted because it
+  // legitimately needs Math.exp to emit the precomputed tables.
+  {
+    files: ["packages/sim/src/**/*.{ts,tsx,js,mjs,cjs}"],
+    plugins: { "@piz/sim": pizSim },
+    rules: {
+      "@piz/sim/no-nondeterministic": "error",
+    },
+  },
+  // Tests live next to source as *.test.ts; harness/fixture code can spin its
+  // own seeds and clock, so don't enforce there.
+  {
+    files: ["packages/sim/src/**/*.test.{ts,tsx,js,mjs}"],
+    rules: { "@piz/sim/no-nondeterministic": "off" },
   },
 );

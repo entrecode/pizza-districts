@@ -1,0 +1,23 @@
+{
+  "name": "@piz/eslint-plugin-sim",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "ESLint rules that enforce determinism-harness §7 / ADR-0003 §4.1 inside packages/sim/**.",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "eslint": ">=9.0.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.20.0",
+    "eslint": "^9.18.0",
+    "typescript-eslint": "^8.20.0",
+    "vitest": "^2.1.8"
+  }
+}
