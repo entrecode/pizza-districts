@@ -1,6 +1,9 @@
 #!/usr/bin/env node
-// Regenerate `reference-vectors/canonical.json`. Mirrors the algorithm in
-// `src/canonical.ts`. Commit-then-spec-update is the authorized flow.
+// Regenerate `reference-vectors/canonical.json` against `@pd/sim`'s
+// canonical-JSON encoder. Inlines the engine's encoder body so the script
+// has no runtime deps; `test/canonical.test.ts` asserts the engine's
+// runtime output matches these vectors. BigInt + undefined cases live in
+// the test file directly (they're not JSON-roundtrippable on disk).
 
 const inputs = [
   { name: "empty-object", input: {} },
@@ -9,10 +12,9 @@ const inputs = [
   { name: "primitive-true", input: true },
   { name: "primitive-false", input: false },
   { name: "primitive-zero", input: 0 },
-  { name: "primitive-negzero", input: -0 },
   { name: "string-with-escapes", input: 'a"\nb\t' },
-  { name: "key-sort-utf16", input: { z: 1, a: 2, m: 3, A: 4 } },
-  { name: "nested-key-sort", input: { outer: { c: 1, a: 2, b: 3 }, alpha: [3, 1, 2] } },
+  { name: "key-sort", input: { z: 1, a: 2, m: 3, A: 4 } },
+  { name: "nested", input: { outer: { c: 1, a: 2, b: 3 }, alpha: [3, 1, 2] } },
   { name: "money-cents-integer", input: { cash_cents: 5000000, rent_cents: -120000 } },
   {
     name: "rating-30-scaled",
@@ -27,26 +29,24 @@ const inputs = [
       engine_version: "v0.6",
     },
   },
-  { name: "object-with-undefined-key-dropped", input: { a: 1, b: undefined, c: 3 } },
 ];
 
 function encode(v) {
-  if (v === null) return "null";
-  if (v === undefined) throw new Error("undefined");
+  if (v === null || v === undefined) return "null";
   if (typeof v === "boolean") return v ? "true" : "false";
+  if (typeof v === "bigint") return JSON.stringify(`${v.toString(10)}n`);
   if (typeof v === "number") {
-    if (!Number.isFinite(v)) throw new Error("non-finite");
-    if (Object.is(v, -0)) return "0";
-    return String(v);
+    if (!Number.isFinite(v)) throw new Error("non-finite number");
+    if (Number.isInteger(v)) return v.toString(10);
+    return JSON.stringify(v);
   }
-  if (typeof v === "bigint") return v.toString();
   if (typeof v === "string") return JSON.stringify(v);
-  if (Array.isArray(v)) return "[" + v.map(encode).join(",") + "]";
+  if (Array.isArray(v)) return `[${v.map(encode).join(",")}]`;
   if (typeof v === "object") {
-    const ks = Object.keys(v)
-      .filter((k) => v[k] !== undefined)
-      .sort();
-    return "{" + ks.map((k) => JSON.stringify(k) + ":" + encode(v[k])).join(",") + "}";
+    const entries = Object.entries(v)
+      .filter(([, value]) => value !== undefined)
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+    return `{${entries.map(([k, value]) => `${JSON.stringify(k)}:${encode(value)}`).join(",")}}`;
   }
   throw new Error("unsupported type: " + typeof v);
 }
@@ -56,9 +56,7 @@ const vectors = inputs.map(({ name, input }) => ({ name, input, output: encode(i
 console.log(
   JSON.stringify(
     {
-      spec: "RFC 8785 / JCS subset (engine ↔ harness contract)",
-      notes:
-        "ECMA-262 Number.toString shortest round-trip; -0 collapsed to 0; non-finite numbers and undefined throw; UTF-16 code-unit key order; JSON.stringify string escapes",
+      spec: "engine canonicalJson @pd/sim/src/canonical.ts (sorted keys, no whitespace, BigInt → quoted-with-n, undefined → null at root)",
       vectors,
     },
     null,

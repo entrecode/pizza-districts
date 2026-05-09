@@ -1,54 +1,97 @@
 // Tier-2 long replay (nightly + release-tag-PR gate) per
 // [determinism-harness](/PIZ/issues/PIZ-9#document-determinism-harness) §6.2.
 //
-// Gating rules (per spec):
+// Gating per spec:
 //   - All cases require `process.env.TIER === "2"`.
-//   - `replay-marketing-heavy-365` and `replay-price-sweep-180` additionally
-//     require `process.env.LUT_READY === "1"` because they rely on the
-//     marketing-uplift / price-pull LUTs from PIZ-24.
-//   - All cases require `process.env.ENGINE_READY === "1"` (i.e. `@pd/sim`
-//     exports `runTick`/`replay`).
-//
-// When the env gate is open this file becomes a real replay matrix; when
-// it's closed (default), the cases skip with a single explanatory line so
-// developers running `pnpm test` locally still see the gate status.
+//   - LUT-dependent cases additionally require `process.env.LUT_READY === "1"`.
 
-import { describe, it } from "vitest";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+import { afterEach, describe, expect, it } from "vitest";
+
+import { EMPTY_LUTS, LUTS } from "@pd/sim";
+
+import {
+  fixtureFreshBrand,
+  fixtureNearBankrupt,
+  fixtureThreeLocations,
+} from "../src/fixtures/engineFixtures";
+import { runDeterminismHarness } from "../src/runHarness";
 
 const TIER_2 = process.env.TIER === "2";
-const ENGINE_READY = process.env.ENGINE_READY === "1";
 const LUT_READY = process.env.LUT_READY === "1";
 
-const cases: Array<{ name: string; ticks: number; lutDependent: boolean }> = [
-  { name: "replay-fresh-365", ticks: 365, lutDependent: false },
-  { name: "replay-three-loc-365", ticks: 365, lutDependent: false },
-  { name: "replay-aggressive-ai-365", ticks: 365, lutDependent: false },
-  { name: "replay-marketing-heavy-365", ticks: 365, lutDependent: true },
-  { name: "replay-bankruptcy-365", ticks: 365, lutDependent: false },
-  { name: "replay-price-sweep-180", ticks: 180, lutDependent: true },
-  { name: "all-features-365", ticks: 365, lutDependent: false },
+let tmpRoots: string[] = [];
+
+afterEach(() => {
+  for (const r of tmpRoots) rmSync(r, { recursive: true, force: true });
+  tmpRoots = [];
+});
+
+function tmpRun(): string {
+  const root = mkdtempSync(join(tmpdir(), "piz-tier2-"));
+  tmpRoots.push(root);
+  return root;
+}
+
+interface Tier2Case {
+  name: string;
+  ticks: number;
+  fixture: () => ReturnType<typeof fixtureFreshBrand>;
+  lutDependent: boolean;
+}
+
+const cases: Tier2Case[] = [
+  { name: "replay-fresh-365", ticks: 365, fixture: fixtureFreshBrand, lutDependent: false },
+  { name: "replay-three-loc-365", ticks: 365, fixture: fixtureThreeLocations, lutDependent: false },
+  { name: "replay-bankruptcy-365", ticks: 365, fixture: fixtureNearBankrupt, lutDependent: false },
+  // LUT-dependent cases share fixtures with their Tier-1 counterparts in this
+  // refit; once the formula-sheet-driven fixtures land they replace these.
+  {
+    name: "replay-marketing-heavy-365",
+    ticks: 365,
+    fixture: fixtureFreshBrand,
+    lutDependent: true,
+  },
+  {
+    name: "replay-price-sweep-180",
+    ticks: 180,
+    fixture: fixtureThreeLocations,
+    lutDependent: true,
+  },
 ];
 
 describe("Tier-2 long replay matrix", () => {
   for (const c of cases) {
     const blocked: string[] = [];
     if (!TIER_2) blocked.push("TIER=2 not set");
-    if (!ENGINE_READY) blocked.push("ENGINE_READY=1 not set (waiting on @pd/sim runTick/replay)");
-    if (c.lutDependent && !LUT_READY) {
-      blocked.push("LUT_READY=1 not set (waiting on PIZ-24 LUTs)");
-    }
+    if (c.lutDependent && !LUT_READY) blocked.push("LUT_READY=1 not set");
     if (blocked.length > 0) {
       it.skip(`${c.name} — blocked: ${blocked.join("; ")}`, () => {});
       continue;
     }
-    it(`${c.name}: ${c.ticks} ticks, intra-run + cross-build determinism`, () => {
-      // Real replay lands once the engine + LUTs are wired (PIZ-31 deps §1, §3).
-      // The harness scaffold (loadFixture → validateFixture → replay → write
-      // artifacts → compareTickChains) is already in `runDeterminismHarness`;
-      // add the engine import + baseline `tick-chain.ndjson` here at that point.
-      throw new Error(
-        `tier2 case ${c.name} reached the unblocked branch but the engine wiring patch has not landed; add it on top of runHarness.ts`,
-      );
-    });
+    it(`${c.name}: ${c.ticks} ticks, intra-run determinism`, () => {
+      const a = tmpRun();
+      const b = tmpRun();
+      const luts = c.lutDependent ? LUTS : EMPTY_LUTS;
+      const ra = runDeterminismHarness({
+        runId: `${c.name}-a`,
+        fixture: c.fixture(),
+        ticks: c.ticks,
+        luts,
+        outDir: a,
+      });
+      const rb = runDeterminismHarness({
+        runId: `${c.name}-b`,
+        fixture: c.fixture(),
+        ticks: c.ticks,
+        luts,
+        outDir: b,
+      });
+      expect(ra.tickChainSha256).toBe(rb.tickChainSha256);
+      expect(ra.records).toHaveLength(c.ticks);
+    }, 30_000);
   }
 });

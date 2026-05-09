@@ -1,8 +1,22 @@
 // Public entry point for the determinism harness package. Engineers wire
 // these into CI jobs; tests reach into individual modules directly.
 
-export { canonicalJson, canonicalJsonBytes, CanonicalJsonError } from "./canonical";
-export { streamRng, pcg32, sha256ToU64Le, PCG32_DEFAULT_INC, type StreamRng } from "./streams";
+export { canonicalJson, CanonicalJsonError } from "./canonical";
+export {
+  streamRng,
+  pcg32FromU64,
+  pcg32FromU64Pair,
+  deriveU64,
+  brandSeed,
+  daySeed,
+  aiSeedFor,
+  poiSeedFor,
+  reviewSeedFor,
+  RESERVED_STREAM_IDS,
+  type StreamRng,
+  type StreamId,
+  type Pcg32,
+} from "./streams";
 export { validateFixture, FixtureValidationError } from "./validateFixture";
 export {
   compareTickChains,
@@ -18,13 +32,4 @@ export {
   type HarnessOptions,
   type HarnessResult,
 } from "./runHarness";
-export type {
-  EngineApi,
-  FixtureFile,
-  ReplayCtx,
-  RunTickResult,
-  SimEvent,
-  SimState,
-  TickInputs,
-  TickRecord,
-} from "./types";
+export type { FixtureFile, HarnessRunArtifacts } from "./types";

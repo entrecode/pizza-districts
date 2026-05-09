@@ -26,6 +26,8 @@ export default tseslint.config(
         Buffer: "readonly",
         __dirname: "readonly",
         __filename: "readonly",
+        TextEncoder: "readonly",
+        TextDecoder: "readonly",
       },
     },
     rules: {

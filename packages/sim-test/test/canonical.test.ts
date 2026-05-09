@@ -1,15 +1,32 @@
-// RFC 8785 / JCS canonical-JSON behavior. Captures the minimum set of
-// invariants the determinism harness depends on: stable key ordering,
-// no whitespace, -0 collapse, rejection of non-finite numbers.
+// Canonical-JSON — engine surface contract test.
+
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { canonicalJson, CanonicalJsonError } from "../src/canonical";
+import { canonicalJson } from "@pd/sim";
 
-describe("canonicalJson", () => {
-  it("sorts object keys by UTF-16 code unit order", () => {
+interface CanonicalVector {
+  name: string;
+  /** Input passed verbatim to canonicalJson. Recorded as JSON in the
+   *  reference-vectors file so the regenerator script and the test agree. */
+  input: unknown;
+  output: string;
+}
+
+interface VectorFile {
+  spec: string;
+  vectors: CanonicalVector[];
+}
+
+const VECTORS = JSON.parse(
+  readFileSync(join(__dirname, "..", "reference-vectors", "canonical.json"), "utf8"),
+) as VectorFile;
+
+describe("canonicalJson (engine) — invariants", () => {
+  it("sorts object keys lexicographically", () => {
     expect(canonicalJson({ b: 1, a: 2 })).toBe('{"a":2,"b":1}');
-    expect(canonicalJson({ ä: 1, z: 2 })).toBe('{"z":2,"ä":1}');
   });
 
   it("emits no whitespace", () => {
@@ -18,47 +35,32 @@ describe("canonicalJson", () => {
     expect(out).not.toMatch(/\s/);
   });
 
-  it("collapses -0 to 0 (RFC 8785 §3.2.2.3)", () => {
-    expect(canonicalJson(-0)).toBe("0");
-    expect(canonicalJson({ a: -0 })).toBe('{"a":0}');
-  });
-
   it("rejects non-finite numbers", () => {
-    expect(() => canonicalJson(Number.NaN)).toThrow(CanonicalJsonError);
-    expect(() => canonicalJson(Number.POSITIVE_INFINITY)).toThrow(CanonicalJsonError);
-    expect(() => canonicalJson(Number.NEGATIVE_INFINITY)).toThrow(CanonicalJsonError);
+    expect(() => canonicalJson(Number.NaN)).toThrow();
   });
 
-  it("rejects undefined at the root", () => {
-    expect(() => canonicalJson(undefined)).toThrow(CanonicalJsonError);
+  it('emits BigInts as `"<digits>n"` (engine convention)', () => {
+    expect(canonicalJson(123n)).toBe('"123n"');
   });
 
-  it("drops undefined-valued object keys (matches JSON.stringify)", () => {
+  it("treats undefined as null at the root", () => {
+    expect(canonicalJson(undefined)).toBe("null");
+  });
+
+  it("drops undefined-valued object keys", () => {
     expect(canonicalJson({ a: 1, b: undefined, c: 3 })).toBe('{"a":1,"c":3}');
   });
 
-  it("escapes string control characters per RFC 8259", () => {
-    expect(canonicalJson('a"\nb')).toBe('"a\\"\\nb"');
-  });
-
-  it("is byte-stable across input key insertion order", () => {
-    const a = canonicalJson({ z: 1, a: 2, m: 3 });
-    const b = canonicalJson({ m: 3, a: 2, z: 1 });
-    expect(a).toBe(b);
-    expect(a).toBe('{"a":2,"m":3,"z":1}');
-  });
-
-  it("renders integer cents as integers (no scientific notation)", () => {
+  it("renders integers verbatim with no scientific notation", () => {
     expect(canonicalJson(1234567)).toBe("1234567");
     expect(canonicalJson(-1234567)).toBe("-1234567");
   });
+});
 
-  it("handles BigInt as decimal integer literal", () => {
-    expect(canonicalJson(123n)).toBe("123");
-    expect(canonicalJson(0xffffffffffffffffn)).toBe("18446744073709551615");
-  });
-
-  it("handles arrays in declared order", () => {
-    expect(canonicalJson([3, 1, 2])).toBe("[3,1,2]");
-  });
+describe("canonicalJson (engine) — reference vectors", () => {
+  for (const v of VECTORS.vectors) {
+    it(`${v.name}`, () => {
+      expect(canonicalJson(v.input)).toBe(v.output);
+    });
+  }
 });

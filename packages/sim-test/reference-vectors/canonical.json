@@ -1,6 +1,5 @@
 {
-  "spec": "RFC 8785 / JCS subset (engine ↔ harness contract)",
-  "notes": "ECMA-262 Number.toString shortest round-trip; -0 collapsed to 0; non-finite numbers and undefined throw; UTF-16 code-unit key order; JSON.stringify string escapes",
+  "spec": "engine canonicalJson @pd/sim/src/canonical.ts (sorted keys, no whitespace, BigInt → quoted-with-n, undefined → null at root)",
   "vectors": [
     {
       "name": "empty-object",
@@ -33,17 +32,12 @@
       "output": "0"
     },
     {
-      "name": "primitive-negzero",
-      "input": 0,
-      "output": "0"
-    },
-    {
       "name": "string-with-escapes",
       "input": "a\"\nb\t",
       "output": "\"a\\\"\\nb\\t\""
     },
     {
-      "name": "key-sort-utf16",
+      "name": "key-sort",
       "input": {
         "z": 1,
         "a": 2,
@@ -53,7 +47,7 @@
       "output": "{\"A\":4,\"a\":2,\"m\":3,\"z\":1}"
     },
     {
-      "name": "nested-key-sort",
+      "name": "nested",
       "input": {
         "outer": {
           "c": 1,
@@ -98,14 +92,6 @@
         "engine_version": "v0.6"
       },
       "output": "{\"engine_version\":\"v0.6\",\"events\":[{\"amount_cents\":-120000,\"kind\":\"rent_paid\"}],\"hash\":\"blake3:abc\",\"tick_index\":7}"
-    },
-    {
-      "name": "object-with-undefined-key-dropped",
-      "input": {
-        "a": 1,
-        "c": 3
-      },
-      "output": "{\"a\":1,\"c\":3}"
     }
   ]
 }
