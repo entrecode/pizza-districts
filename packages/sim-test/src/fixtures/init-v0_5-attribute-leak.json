@@ -1,0 +1,24 @@
+{
+  "_comment": "Negative fixture for determinism-harness §3.1 / PIZ-22. Carries v0.5 legacy `resident_density` on a parcel; loading this MUST fail at validateFixture time with a 'v0.5 attribute leak' error before any tick runs.",
+  "brand_seed": "0xC0FFEE",
+  "initial_state": {
+    "engine_shape_version": "v0.6",
+    "brand_state": {
+      "rating_30_scaled": 0,
+      "consecutive_negative_cash_days": 0
+    },
+    "parcels": [
+      {
+        "id": "p_legacy",
+        "location_snapshot": {
+          "attributes": {
+            "resident_density": 50,
+            "purchasing_power": 60,
+            "visibility": 70,
+            "competition": 30
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "_comment": "§6.2.1 freeze cohort — `bankruptcy-edge-28d` / `replay-bankruptcy-365`. Pre-frozen against engine-shape v0.6 per CTO PIZ-24 audit; tick_log capture gated on @pd/sim runTick exports.",
+  "brand_seed": "0xDEAD01",
+  "initial_state": {
+    "engine_shape_version": "v0.6",
+    "tick_index": 0,
+    "brand_state": {
+      "cash_cents": -100,
+      "rating_30_scaled": 2500,
+      "consecutive_negative_cash_days": 13
+    },
+    "locations": [
+      {
+        "id": "loc_1",
+        "rating_30_scaled": 2500,
+        "marketing_reach_milli": 0,
+        "menu_price_cents": 900
+      }
+    ],
+    "parcels": [
+      {
+        "id": "p_1",
+        "location_snapshot": {
+          "attributes": {
+            "foot_traffic": 30,
+            "purchasing_power": 25,
+            "visibility": 40,
+            "density": 50,
+            "competition": 70
+          }
+        }
+      }
+    ],
+    "ledger": []
+  }
+}

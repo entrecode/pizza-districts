@@ -1,0 +1,91 @@
+{
+  "_comment": "§6.2 `replay-price-sweep-180` (added per GD §6 review 2026-05-08). Four single-location brands at price tiers 40%/80%/100%/130% of pp_target_price_eur. Parcel attributes are matched across brands so price is the only varying input. Exercises price_pull LUT input range ≈ −1.2 to +0.6.",
+  "brand_seed": "0xA9CE01",
+  "initial_state": {
+    "engine_shape_version": "v0.6",
+    "tick_index": 0,
+    "brand_state": {
+      "cash_cents": 2000000,
+      "rating_30_scaled": 3500,
+      "consecutive_negative_cash_days": 0
+    },
+    "pp_target_price_eur_cents": 1000,
+    "locations": [
+      {
+        "id": "loc_p40",
+        "menu_price_cents": 400,
+        "marketing_reach_milli": 0,
+        "rating_30_scaled": 3500
+      },
+      {
+        "id": "loc_p80",
+        "menu_price_cents": 800,
+        "marketing_reach_milli": 0,
+        "rating_30_scaled": 3500
+      },
+      {
+        "id": "loc_p100",
+        "menu_price_cents": 1000,
+        "marketing_reach_milli": 0,
+        "rating_30_scaled": 3500
+      },
+      {
+        "id": "loc_p130",
+        "menu_price_cents": 1300,
+        "marketing_reach_milli": 0,
+        "rating_30_scaled": 3500
+      }
+    ],
+    "parcels": [
+      {
+        "id": "p_p40",
+        "location_snapshot": {
+          "attributes": {
+            "foot_traffic": 50,
+            "purchasing_power": 50,
+            "visibility": 50,
+            "density": 50,
+            "competition": 50
+          }
+        }
+      },
+      {
+        "id": "p_p80",
+        "location_snapshot": {
+          "attributes": {
+            "foot_traffic": 50,
+            "purchasing_power": 50,
+            "visibility": 50,
+            "density": 50,
+            "competition": 50
+          }
+        }
+      },
+      {
+        "id": "p_p100",
+        "location_snapshot": {
+          "attributes": {
+            "foot_traffic": 50,
+            "purchasing_power": 50,
+            "visibility": 50,
+            "density": 50,
+            "competition": 50
+          }
+        }
+      },
+      {
+        "id": "p_p130",
+        "location_snapshot": {
+          "attributes": {
+            "foot_traffic": 50,
+            "purchasing_power": 50,
+            "visibility": 50,
+            "density": 50,
+            "competition": 50
+          }
+        }
+      }
+    ],
+    "ledger": []
+  }
+}

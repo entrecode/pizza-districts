@@ -19,6 +19,14 @@ export default tseslint.config(
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "module",
+      globals: {
+        // Node-flavored globals used by harness scripts and engine code.
+        process: "readonly",
+        console: "readonly",
+        Buffer: "readonly",
+        __dirname: "readonly",
+        __filename: "readonly",
+      },
     },
     rules: {
       "@typescript-eslint/no-unused-vars": [

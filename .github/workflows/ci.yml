@@ -4,6 +4,9 @@ on:
   pull_request:
   push:
     branches: [main]
+  schedule:
+    # Nightly Tier-2 long-replay gate (06:00 UTC = 07/08:00 Europe/Berlin).
+    - cron: "0 6 * * *"
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -41,3 +44,106 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+
+  db-test:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    env:
+      PG_HOST: 127.0.0.1
+      PG_PORT: "5432"
+      PG_USER: postgres
+      PG_PASSWORD: ""
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Postgres 14 + pgTAP + pg_prove
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            postgresql-14 \
+            postgresql-contrib-14 \
+            postgresql-14-pgtap \
+            postgresql-client-14 \
+            pgtap
+
+      - name: Configure Postgres for trust auth on 127.0.0.1
+        run: |
+          sudo systemctl start postgresql
+          PG_HBA=$(sudo -u postgres psql -tAc "show hba_file")
+          # Prepend a trust rule so it matches before any default scram/md5
+          # entry. Throwaway CI database; never run trust auth elsewhere.
+          sudo sh -c "printf 'host all all 127.0.0.1/32 trust\nhost all all ::1/128 trust\n' > '$PG_HBA'.new && cat '$PG_HBA' >> '$PG_HBA'.new && mv '$PG_HBA'.new '$PG_HBA'"
+          sudo systemctl restart postgresql
+
+      - name: Run db tests
+        run: bash scripts/db-test.sh
+
+  # Determinism harness — Tier-1 (fast PR gate, per
+  # determinism-harness §6.1 / §9). Required for merge on any PR touching
+  # the engine, harness, or schema (path filter enforced via the GitHub
+  # branch protection rule, not here).
+  sim-determinism-tier1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile=false
+
+      - name: Run Tier-1 determinism suite
+        run: pnpm --filter @pd/sim-test run test:tier1
+
+      - name: Upload sim-runs artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sim-runs-tier1
+          path: artifacts/sim-runs
+          if-no-files-found: ignore
+
+  # Determinism harness — Tier-2 (long replay; nightly + release-tag-PR
+  # gate, per determinism-harness §6.2 / §9). LUT-dependent cases stay
+  # skipped until PIZ-24 ships and `LUT_READY=1` is set.
+  sim-determinism-tier2:
+    if: github.event_name == 'schedule' || (github.event_name == 'pull_request' && startsWith(github.head_ref, 'release/'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile=false
+
+      - name: Run Tier-2 determinism suite
+        env:
+          TIER: "2"
+          # Set ENGINE_READY / LUT_READY in repo secrets (or branch env)
+          # once the engine + LUTs land; until then Tier-2 is no-op.
+          ENGINE_READY: ${{ vars.ENGINE_READY || '' }}
+          LUT_READY: ${{ vars.LUT_READY || '' }}
+        run: pnpm --filter @pd/sim-test run test:tier2
+
+      - name: Upload sim-runs artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sim-runs-tier2
+          path: artifacts/sim-runs
+          if-no-files-found: ignore

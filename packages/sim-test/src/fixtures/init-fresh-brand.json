@@ -1,0 +1,36 @@
+{
+  "_comment": "Phase-1 stub for Tier-1 `passive-Nd` and `with-events-7d` cases. Engine-side fixture freeze (PIZ-24) will canonicalize this once @pd/sim ships replay().",
+  "brand_seed": "0xC0FFEE",
+  "initial_state": {
+    "engine_shape_version": "v0.6",
+    "tick_index": 0,
+    "brand_state": {
+      "cash_cents": 5000000,
+      "rating_30_scaled": 4000,
+      "consecutive_negative_cash_days": 0
+    },
+    "locations": [
+      {
+        "id": "loc_1",
+        "rating_30_scaled": 4000,
+        "marketing_reach_milli": 0,
+        "menu_price_cents": 1200
+      }
+    ],
+    "parcels": [
+      {
+        "id": "p_1",
+        "location_snapshot": {
+          "attributes": {
+            "foot_traffic": 60,
+            "purchasing_power": 50,
+            "visibility": 70,
+            "density": 55,
+            "competition": 40
+          }
+        }
+      }
+    ],
+    "ledger": []
+  }
+}
