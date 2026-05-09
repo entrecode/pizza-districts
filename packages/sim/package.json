@@ -7,10 +7,17 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./rng": "./src/rng/index.ts",
+    "./shims": "./src/shims/index.ts",
+    "./steps": "./src/steps/index.ts",
     "./*": "./src/*"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@noble/hashes": "^1.7.1"
   },
   "devDependencies": {
     "typescript": "^5.7.3",
