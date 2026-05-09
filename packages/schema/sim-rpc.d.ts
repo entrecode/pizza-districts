@@ -5,6 +5,7 @@
 // Hand-authored to mirror the SQL signatures in:
 //   * supabase/migrations/0011_sim_load_state.sql
 //   * supabase/migrations/0012_sim_commit_ticks.sql
+//   * supabase/migrations/0030_sim_read_tick_log.sql (PIZ-23, test-only)
 //
 // When those signatures change, this file changes in the same PR.
 //
@@ -99,6 +100,52 @@ export type SimCommitTicksError =
   | { sqlstate: "02000"; kind: "no_data_found" };
 
 /**
+ * One row returned by `public.sim_read_tick_log(uuid, integer, integer)`.
+ * The Postgres function declares `RETURNS SETOF public.sim_tick_log_row`;
+ * supabase-js will deliver the array via PostgREST as JSON objects
+ * shaped like this.
+ *
+ * `tick_hash` is a 64-character lowercase hex string (32 bytes) — the
+ * same wire shape as `SimCommitTicksRow.tick_hash`, so the harness can
+ * compare a freshly-replayed chain against a committed chain with `===`
+ * on the string form. The Postgres `bytea` is converted by the function
+ * itself (`encode(tick_hash, 'hex')`).
+ */
+export interface SimReadTickLogRow {
+  tick_index: number;
+  /** 64 hex chars = 32 bytes. Matches `SimCommitTicksRow.tick_hash`. */
+  tick_hash: Hex;
+  events_jsonb: unknown;
+  engine_version: string;
+}
+
+/**
+ * Args for `public.sim_read_tick_log(save_id, from_tick, to_tick)`.
+ *
+ * Range is inclusive on both ends. `from_tick > to_tick` returns an
+ * empty array (Postgres `BETWEEN` semantics, no error).
+ *
+ * Authorization: harness_test only. Authenticated and anon get
+ * SQLSTATE `42501` insufficient_privilege at the EXECUTE check, so
+ * any production app code that imports this type and calls the RPC
+ * via supabase-js will fail loudly at runtime — this is intentional.
+ */
+export interface SimReadTickLogArgs {
+  save_id: Uuid;
+  /** Inclusive lower bound on `tick_index`. */
+  from_tick: number;
+  /** Inclusive upper bound on `tick_index`. */
+  to_tick: number;
+}
+
+/**
+ * Return value: ordered ascending by `tick_index`. Cross-save isolation
+ * is enforced inside the function body — a call with `save_id = A`
+ * never returns rows belonging to save B.
+ */
+export type SimReadTickLogResponse = SimReadTickLogRow[];
+
+/**
  * Functions table for use with `supabase-js`'s
  * `createClient<Database>(...)` typed-client pattern. Mirrors
  * https://supabase.com/docs/reference/javascript/typescript-support.
@@ -120,5 +167,9 @@ export interface SimRpcFunctions {
   sim_commit_ticks: {
     Args: SimCommitTicksArgs;
     Returns: SimCommitTicksResponse;
+  };
+  sim_read_tick_log: {
+    Args: SimReadTickLogArgs;
+    Returns: SimReadTickLogResponse;
   };
 }
