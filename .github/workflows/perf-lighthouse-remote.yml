@@ -7,6 +7,11 @@
 
 name: Perf — Lighthouse remote
 
+# Dispatch (browser): https://github.com/entrecode/pizza-districts/actions/workflows/perf-lighthouse-remote.yml
+# CLI: gh workflow run "Perf — Lighthouse remote" -R entrecode/pizza-districts -f perf_preview_url='https://….vercel.app'
+
+run-name: "LH remote ${{ github.event.inputs.perf_preview_url }}"
+
 on:
   workflow_dispatch:
     inputs:
