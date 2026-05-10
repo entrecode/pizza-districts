@@ -15,9 +15,9 @@ import { applyMobileThrottle } from "../src/throttle";
 //   - total Maps JS payload ≤ 280 KB gz × (1 + slack), if Maps is present
 //   - first-paint-after-Maps ≤ 2.5 s × (1 + slack), if Maps is present
 //
-// Maps assertions are skipped on the empty Phase 1 baseline. They turn on
-// automatically the moment MapShell ships and Maps script requests appear
-// in the network log — see PIZ-17.
+// Maps assertions are skipped when no Maps JS loads (e.g. CI placeholders or
+// `mapsRuntimeEnabled()` false). They run automatically once real browser keys +
+// cloud `mapId` bootstrap the SDK — see [PIZ-17](/PIZ/issues/PIZ-17).
 
 type BudgetReport = {
   url: string;
@@ -106,7 +106,7 @@ test("perf-budget gate: /play stays inside ADR-0004 §1 budgets", async ({ page 
 
   if (mapsRecords.length === 0) {
     notes.push(
-      "No Maps JS requests observed. Skipping Maps payload + first-map-paint assertions (Phase 1 pre-MapShell baseline).",
+      "No Maps JS requests observed. Skipping Maps payload + first-map-paint assertions (Maps bootstrap inactive or blocked).",
     );
   }
   if (ownJsBytes > PERF_BUDGETS.ownJsGzKB * KB && ownJsBytes <= ceilings.ownJs) {

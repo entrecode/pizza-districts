@@ -16,6 +16,7 @@ env:
   NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
   NEXT_PUBLIC_SITE_URL: http://localhost:3000
   NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY: ci-placeholder
+  NEXT_PUBLIC_GOOGLE_MAPS_STYLE_ID: ci-placeholder
   SUPABASE_SERVICE_ROLE_KEY: ci-placeholder
   GOOGLE_PLACES_SERVER_KEY: ci-placeholder
 
@@ -45,8 +46,8 @@ jobs:
   # /play mobile perf-budget + Lighthouse gate (PIZ-16).
   # Required check on every PR. Asserts ADR-0004 §1 budgets:
   #   - own JS gz ≤ 180 KB (+10% slack)
-  #   - Maps JS gz ≤ 280 KB (+10% slack) — skipped pre-MapShell
-  #   - first map paint ≤ 2.5 s (+10% slack) — skipped pre-MapShell
+  #   - Maps JS gz ≤ 280 KB (+10% slack) — skipped when Maps JS never loads
+  #   - first map paint ≤ 2.5 s (+10% slack) — skipped when Maps JS never loads
   #   - Lighthouse mobile performance ≥ 0.85
   # Trace + Lighthouse HTML reports upload as artifacts so engineers can
   # debug regressions when the gate fails.
