@@ -1,4 +1,5 @@
 import js from "@eslint/js";
+import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
@@ -62,6 +63,14 @@ export default tseslint.config(
           ],
         },
       ],
+    },
+  },
+  // CommonJS configs (e.g. lighthouserc.cjs) need Node globals and CJS source type.
+  {
+    files: ["**/*.cjs"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: { ...globals.node },
     },
   },
 );
