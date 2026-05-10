@@ -3,7 +3,11 @@ const vercelBypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
 
 /** @type {Record<string, string>} */
 const extraHeaders = vercelBypass
-  ? { "x-vercel-protection-bypass": vercelBypass }
+  ? {
+      "x-vercel-protection-bypass": vercelBypass,
+      // Persist bypass for redirects / subresource loads (Vercel automation bypass).
+      "x-vercel-set-bypass-cookie": "true",
+    }
   : {};
 
 module.exports = {

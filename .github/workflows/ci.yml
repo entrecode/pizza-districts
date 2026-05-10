@@ -7,6 +7,12 @@ on:
   schedule:
     # Nightly Tier-2 long-replay gate (06:00 UTC = 07/08:00 Europe/Berlin).
     - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      perf_preview_url:
+        description: "Base URL for remote Lighthouse (no trailing slash), e.g. https://….vercel.app"
+        required: true
+        type: string
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -95,6 +101,43 @@ jobs:
         with:
           name: perf-budget-report
           path: packages/perf/playwright-report/budget-report.json
+          if-no-files-found: ignore
+
+  # Remote Lighthouse CI — manual QA / CTO against a protected Vercel preview.
+  # Set repo secret VERCEL_AUTOMATION_BYPASS_SECRET to match the Vercel automation bypass.
+  # Runs 3× mobile /play audits (packages/perf/lighthouserc.cjs).
+  perf-lighthouse-remote:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile=false
+
+      - uses: browser-actions/setup-chrome@v2
+
+      - name: Lighthouse CI (preview)
+        env:
+          PERF_BASE_URL: ${{ github.event.inputs.perf_preview_url }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: pnpm --filter @pd/perf test:lighthouse
+
+      - name: Upload LHCI output on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lhci-output
+          path: packages/perf/lhci-output
           if-no-files-found: ignore
 
   db-test:
