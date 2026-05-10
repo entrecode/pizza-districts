@@ -76,6 +76,11 @@ export function MapShell({ parcelId }: { parcelId: string }) {
         markers,
         algorithm: new SuperClusterAlgorithm({}),
       });
+
+      if (typeof window !== "undefined") {
+        const w = window as Window & { __PD_MAP_READY_MS?: number };
+        w.__PD_MAP_READY_MS = Math.round(performance.now());
+      }
     }
 
     void init().catch(() => {

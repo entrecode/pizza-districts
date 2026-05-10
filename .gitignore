@@ -22,6 +22,11 @@ build/
 # coverage / test
 coverage/
 .vitest-cache/
+packages/perf/playwright-report/
+packages/perf/test-results/
+packages/perf/lhci-output/
+packages/perf/.lighthouseci/
+packages/perf/.auth/
 
 # logs
 *.log

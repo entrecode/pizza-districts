@@ -45,6 +45,58 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
 
+  # Maps perf gate — exercises Playwright budget harness on /play (maps ceilings
+  # skipped when `ci-placeholder` keys; real keys required to assert ceilings per PIZ-73).
+  perf-budget:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+      NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+      NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY: ci-placeholder
+      SUPABASE_SERVICE_ROLE_KEY: ci-placeholder
+      GOOGLE_PLACES_SERVER_KEY: ci-placeholder
+      PERF_GATE: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile=false
+
+      - name: Build web (production)
+        run: pnpm --filter @pd/web build
+
+      - name: Start web server
+        run: |
+          pnpm --filter @pd/web start &
+          pnpm --filter @pd/perf exec wait-on -t 120000 http://127.0.0.1:3000/play
+
+      - name: Install Playwright Chromium
+        run: pnpm --filter @pd/perf exec playwright install chromium --with-deps
+
+      - name: Run perf budget (mobile 375×812)
+        env:
+          PERF_USE_RUNNING_SERVER: "1"
+          PERF_BASE_URL: http://127.0.0.1:3000
+        run: pnpm --filter @pd/perf test:budget
+
+      - name: Upload budget-report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-budget-report
+          path: packages/perf/playwright-report/budget-report.json
+          if-no-files-found: ignore
+
   db-test:
     runs-on: ubuntu-22.04
     timeout-minutes: 10

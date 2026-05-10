@@ -12,6 +12,7 @@ export default tseslint.config(
       "**/coverage/**",
       "**/*.tsbuildinfo",
       "**/next-env.d.ts",
+      "packages/perf/lighthouserc.cjs",
       // Auto-generated LUTs: PIZ-35 emits these from generate-luts.mjs and
       // they're already verified by the lock-file CI gate (`check-luts`).
       "packages/sim/src/lut/exp_clamped_q12.ts",
