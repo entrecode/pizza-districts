@@ -37,7 +37,8 @@ function advancedClusterRenderer(
 export function MapShell({ parcelId = "phase1-demo" }: MapShellProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const setSelectedParcelId = usePlayStore((s) => s.setSelectedParcelId);
-  const [mode, setMode] = useState<"loading" | "inactive" | "ready" | "error">("loading");
+  const [mode, setMode] = useState<"loading" | "inactive" | "idle" | "ready" | "error">("loading");
+  const [activated, setActivated] = useState(false);
 
   useEffect(() => {
     const host = rootRef.current;
@@ -48,11 +49,16 @@ export function MapShell({ parcelId = "phase1-demo" }: MapShellProps) {
       return;
     }
 
+    if (!activated) {
+      setMode("idle");
+      return;
+    }
+
     let cancelled = false;
     let clusterer: MarkerClusterer | null = null;
     const markers: google.maps.marker.AdvancedMarkerElement[] = [];
 
-    void (async () => {
+    const bootMap = async () => {
       try {
         setMode("loading");
         const res = await fetch(`/api/places/parcel/${encodeURIComponent(parcelId)}/snapshot`);
@@ -126,7 +132,9 @@ export function MapShell({ parcelId = "phase1-demo" }: MapShellProps) {
       } catch {
         if (!cancelled) setMode("error");
       }
-    })();
+    };
+
+    void bootMap();
 
     return () => {
       cancelled = true;
@@ -158,6 +166,18 @@ export function MapShell({ parcelId = "phase1-demo" }: MapShellProps) {
           <p className="rounded-pill bg-surface px-4 py-2 text-label text-text-muted shadow-elevation-sm">
             Loading map…
           </p>
+        </div>
+      ) : null}
+
+      {mode === "idle" ? (
+        <div className="absolute inset-0 grid place-items-center bg-surface-muted/80 p-6 text-center">
+          <button
+            type="button"
+            className="rounded-button bg-brand-primary px-5 py-3 text-label text-brand-primary-ink shadow-elevation-sm"
+            onClick={() => setActivated(true)}
+          >
+            Load district map
+          </button>
         </div>
       ) : null}
 
