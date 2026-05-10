@@ -65,7 +65,7 @@ site here so the scrubber's regex list can be reviewed.
 Two affordances. Pick one per cycle and capture the resulting Sentry event
 URL with decoded frames as the row 16 artifact.
 
-### Server route (preferred — exercises onRequestError)
+### Server route (preferred — exercises server SDK + source maps)
 
 In a build with `SENTRY_SMOKE_TOKEN` set:
 
@@ -74,9 +74,11 @@ curl -i -H "Authorization: Bearer $SENTRY_SMOKE_TOKEN" \
   "https://<host>/api/sentry-smoke?kind=throw"
 ```
 
-Expected: HTTP 500 from the route, a Sentry event in the project tagged
-with the build's release identifier, and decoded frames pointing back at
-`apps/web/app/api/sentry-smoke/route.ts`.
+Expected: HTTP 500 from the route and a Sentry event tagged `sentry_smoke`
+(`throw` or `reject`). The handler calls `captureException` + `flush` so
+delivery does not rely on Next.js invoking `onRequestError` for route handlers
+(see [PIZ-77](/PIZ/issues/PIZ-77)). The event should use the deploy release
+and decoded frames should point at `apps/web/app/api/sentry-smoke/route.ts`.
 
 For preview/dev builds without a token, set
 `NEXT_PUBLIC_SENTRY_SMOKE_ENABLED=1` to allow unauthenticated smoke fires.
