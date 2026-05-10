@@ -1,0 +1,63 @@
+# Manual mobile Lighthouse on a Vercel preview (/play). Does not run the full CI graph.
+#
+# Prerequisites:
+# - Repo secret VERCEL_AUTOMATION_BYPASS_SECRET must match Vercel → Deployment Protection →
+#   Protection Bypass for Automation (same string in both places).
+# - packages/perf/lighthouserc.cjs: 3 runs, 375×812, optional bypass headers + cookie.
+
+name: Perf — Lighthouse remote
+
+on:
+  workflow_dispatch:
+    inputs:
+      perf_preview_url:
+        description: "Preview base URL (no trailing slash), e.g. https://….vercel.app"
+        required: true
+        type: string
+
+concurrency:
+  group: perf-lighthouse-remote-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile=false
+
+      - uses: browser-actions/setup-chrome@v2
+
+      - name: Require Vercel automation bypass secret
+        env:
+          SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: |
+          if [ -z "$SECRET" ]; then
+            echo "::error::VERCEL_AUTOMATION_BYPASS_SECRET is not set in GitHub Actions secrets. Create the bypass in Vercel (Deployment Protection → Protection Bypass for Automation) and copy the same value here."
+            exit 1
+          fi
+
+      - name: Lighthouse CI (preview /play)
+        env:
+          PERF_BASE_URL: ${{ github.event.inputs.perf_preview_url }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: pnpm --filter @pd/perf test:lighthouse
+
+      - name: Upload LHCI output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lhci-output
+          path: packages/perf/lhci-output
+          if-no-files-found: warn
