@@ -39,6 +39,18 @@ code="$(curl -sS -o "$tmp" -w '%{http_code}' -L -X POST \
 if [[ "$code" != "204" ]]; then
   echo "GitHub API HTTP ${code}" >&2
   cat "$tmp" >&2
+  case "$code" in
+    401) echo "Hint: invalid or expired token." >&2 ;;
+    403)
+      echo "Hint: classic PAT needs 'workflow' scope (or fine-grained: Actions: write on this repo)." >&2
+      ;;
+    404)
+      echo "Hint: workflow file missing on ref '${REF}' or repo '${REPO}' wrong — use default branch that contains perf-lighthouse-remote.yml." >&2
+      ;;
+    422)
+      echo "Hint: check workflow inputs / branch name; body was: ${BODY}" >&2
+      ;;
+  esac
   exit 1
 fi
 
