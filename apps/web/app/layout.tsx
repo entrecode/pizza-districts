@@ -2,15 +2,17 @@ import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
+// Latin-only keeps the critical font payload small for mobile Lighthouse on /play.
+// Re-add `latin-ext` via an ADR amendment when i18n requires extended glyph coverage.
 const sans = Inter({
-  subsets: ["latin", "latin-ext"],
+  subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
   preload: true,
 });
 
 const display = Space_Grotesk({
-  subsets: ["latin", "latin-ext"],
+  subsets: ["latin"],
   variable: "--font-display",
   display: "swap",
   preload: false,

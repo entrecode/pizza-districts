@@ -52,84 +52,125 @@ export function MapShell({ parcelId = "phase1-demo" }: MapShellProps) {
     let clusterer: MarkerClusterer | null = null;
     const markers: google.maps.marker.AdvancedMarkerElement[] = [];
 
-    void (async () => {
-      try {
-        setMode("loading");
-        const res = await fetch(`/api/places/parcel/${encodeURIComponent(parcelId)}/snapshot`);
-        if (!res.ok) throw new Error(`snapshot ${res.status}`);
-        const snapshot = (await res.json()) as ParcelSnapshot;
+    // Defer Maps bootstrap until the main thread is idle so first paint
+    // happens before the SDK is downloaded/parsed (PIZ-88, ADR-0004 §1).
+    // requestIdleCallback gives Lighthouse mobile room to record FCP/LCP
+    // against the page chrome before Maps work blocks the main thread.
+    type IdleHandle = number;
+    const ric: (cb: () => void, opts?: { timeout: number }) => IdleHandle =
+      typeof window !== "undefined" &&
+      typeof (window as unknown as { requestIdleCallback?: unknown }).requestIdleCallback ===
+        "function"
+        ? (cb, opts) =>
+            (
+              window as unknown as {
+                requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => IdleHandle;
+              }
+            ).requestIdleCallback(cb, opts)
+        : (cb) => window.setTimeout(cb, 0) as unknown as IdleHandle;
+    const cic: (h: IdleHandle) => void =
+      typeof window !== "undefined" &&
+      typeof (window as unknown as { cancelIdleCallback?: unknown }).cancelIdleCallback ===
+        "function"
+        ? (h) =>
+            (
+              window as unknown as { cancelIdleCallback: (h: IdleHandle) => void }
+            ).cancelIdleCallback(h)
+        : (h) => window.clearTimeout(h as unknown as number);
 
-        const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY;
-        const mapId = process.env.NEXT_PUBLIC_GOOGLE_MAPS_STYLE_ID;
-        if (!apiKey || !mapId) throw new Error("maps env");
+    let idleHandle: IdleHandle | null = null;
 
-        const { importLibrary, setOptions } = await import("@googlemaps/js-api-loader");
-        setOptions({ key: apiKey, v: "weekly" });
+    const startBootstrap = () => {
+      void (async () => {
+        try {
+          setMode("loading");
+          const res = await fetch(`/api/places/parcel/${encodeURIComponent(parcelId)}/snapshot`);
+          if (!res.ok) throw new Error(`snapshot ${res.status}`);
+          const snapshot = (await res.json()) as ParcelSnapshot;
 
-        const { Map } = await importLibrary("maps");
-        const { AdvancedMarkerElement } = await importLibrary("marker");
+          const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY;
+          const mapId = process.env.NEXT_PUBLIC_GOOGLE_MAPS_STYLE_ID;
+          if (!apiKey || !mapId) throw new Error("maps env");
 
-        const { MarkerClusterer, SuperClusterAlgorithm } =
-          await import("@googlemaps/markerclusterer");
+          const { importLibrary, setOptions } = await import("@googlemaps/js-api-loader");
+          setOptions({ key: apiKey, v: "weekly" });
 
-        if (cancelled) return;
+          // Phase 1: only the maps core. Render the basemap, wait for it to
+          // settle, then load marker + clusterer in a second slice. This
+          // splits parse/eval cost across two main-thread breaks and keeps
+          // Lighthouse Total Blocking Time lower than a single mega-await.
+          const { Map } = await importLibrary("maps");
+          if (cancelled) return;
 
-        const map = new Map(host, {
-          center: snapshot.center,
-          zoom: snapshot.zoom,
-          mapId,
-          disableDefaultUI: true,
-          clickableIcons: false,
-          gestureHandling: "greedy",
-          keyboardShortcuts: false,
-        });
+          const map = new Map(host, {
+            center: snapshot.center,
+            zoom: snapshot.zoom,
+            mapId,
+            disableDefaultUI: true,
+            clickableIcons: false,
+            gestureHandling: "greedy",
+            keyboardShortcuts: false,
+          });
 
-        for (const poi of snapshot.pois) {
-          const content = document.createElement("div");
-          content.className =
-            "flex h-3 w-3 cursor-pointer rounded-full border-2 border-white bg-brand-primary shadow-elevation-sm ring-1 ring-black/10";
-          content.title = poi.shortLabel;
+          await new Promise<void>((resolve) => {
+            const idleListener = map.addListener("idle", () => {
+              idleListener.remove();
+              resolve();
+            });
+          });
+          if (cancelled) return;
 
-          const marker = new AdvancedMarkerElement({
+          // Phase 2: marker library + clusterer + POI overlays.
+          const { AdvancedMarkerElement } = await importLibrary("marker");
+          const { MarkerClusterer, SuperClusterAlgorithm } =
+            await import("@googlemaps/markerclusterer");
+          if (cancelled) return;
+
+          for (const poi of snapshot.pois) {
+            const content = document.createElement("div");
+            content.className =
+              "flex h-3 w-3 cursor-pointer rounded-full border-2 border-white bg-brand-primary shadow-elevation-sm ring-1 ring-black/10";
+            content.title = poi.shortLabel;
+
+            const marker = new AdvancedMarkerElement({
+              map,
+              position: { lat: poi.lat, lng: poi.lng },
+              content,
+              gmpClickable: true,
+              title: poi.shortLabel,
+            });
+
+            marker.addListener("click", () => {
+              setSelectedParcelId(poi.id);
+              window.dispatchEvent(
+                new CustomEvent("parcel:selected", { detail: { parcelId: poi.id } }),
+              );
+            });
+
+            markers.push(marker);
+          }
+
+          clusterer = new MarkerClusterer({
             map,
-            position: { lat: poi.lat, lng: poi.lng },
-            content,
-            gmpClickable: true,
-            title: poi.shortLabel,
+            markers,
+            algorithm: new SuperClusterAlgorithm({ maxZoom: 16, radius: 56 }),
+            renderer: advancedClusterRenderer(AdvancedMarkerElement),
           });
 
-          marker.addListener("click", () => {
-            setSelectedParcelId(poi.id);
-            window.dispatchEvent(
-              new CustomEvent("parcel:selected", { detail: { parcelId: poi.id } }),
-            );
-          });
-
-          markers.push(marker);
+          if (!cancelled) setMode("ready");
+        } catch {
+          if (!cancelled) setMode("error");
         }
+      })();
+    };
 
-        clusterer = new MarkerClusterer({
-          map,
-          markers,
-          algorithm: new SuperClusterAlgorithm({ maxZoom: 16, radius: 56 }),
-          renderer: advancedClusterRenderer(AdvancedMarkerElement),
-        });
-
-        await new Promise<void>((resolve) => {
-          const idleListener = map.addListener("idle", () => {
-            idleListener.remove();
-            resolve();
-          });
-        });
-
-        if (!cancelled) setMode("ready");
-      } catch {
-        if (!cancelled) setMode("error");
-      }
-    })();
+    // 600 ms timeout matches the LH mobile FCP budget — never starve the
+    // map if the main thread is heavily contended.
+    idleHandle = ric(startBootstrap, { timeout: 600 });
 
     return () => {
       cancelled = true;
+      if (idleHandle !== null) cic(idleHandle);
       clusterer?.clearMarkers();
       clusterer?.setMap(null);
       clusterer = null;

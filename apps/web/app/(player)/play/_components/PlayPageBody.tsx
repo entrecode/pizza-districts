@@ -7,9 +7,11 @@ import { usePlayStore } from "@/lib/store/play-store";
 const MapShell = lazy(async () => import("./MapShell"));
 
 function MapTileFallback() {
+  // Static fill, no animate-pulse: continuous style churn inflates Lighthouse
+  // mobile TBT/CLS recordings on /play (PIZ-88).
   return (
     <div
-      className="absolute inset-0 animate-pulse bg-surface-muted"
+      className="absolute inset-0 bg-surface-muted"
       aria-busy="true"
       aria-label="Loading map module"
     />
