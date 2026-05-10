@@ -7,6 +7,15 @@ import { buildPoiPinElement } from "@/lib/maps/poi-pin";
 import type { ParcelSnapshotPoi, ParcelSnapshotResponse } from "@/lib/places/parcel-snapshot";
 import { usePlayStore } from "@/lib/stores/play-store";
 
+function onceMapIdle(map: google.maps.Map): Promise<void> {
+  return new Promise((resolve) => {
+    const listener = map.addListener("idle", () => {
+      listener.remove();
+      resolve();
+    });
+  });
+}
+
 export function MapShell({ parcelId }: { parcelId: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const selectParcel = usePlayStore((s) => s.selectParcel);
@@ -35,7 +44,6 @@ export function MapShell({ parcelId }: { parcelId: string }) {
       setOptions({ key, v: "weekly" });
 
       const { Map } = await importLibrary("maps");
-      const { AdvancedMarkerElement } = await importLibrary("marker");
 
       if (cancelled || !containerRef.current) {
         return;
@@ -62,6 +70,16 @@ export function MapShell({ parcelId }: { parcelId: string }) {
       }
       map.setCenter(snapshot.center);
 
+      await onceMapIdle(map);
+      if (cancelled) {
+        return;
+      }
+
+      const { AdvancedMarkerElement } = await importLibrary("marker");
+      if (cancelled) {
+        return;
+      }
+
       const { MarkerClusterer, SuperClusterAlgorithm } = await import("@googlemaps/markerclusterer");
 
       for (const poi of snapshot.pois as ParcelSnapshotPoi[]) {
@@ -85,14 +103,10 @@ export function MapShell({ parcelId }: { parcelId: string }) {
         algorithm: new SuperClusterAlgorithm({}),
       });
 
-      /** Perf harness (PIZ-73 / PIZ-89): time-to-interactive map signal — FCP/FP fire before Maps; use first `idle` after bootstrap. */
-      google.maps.event.addListenerOnce(map, "idle", () => {
-        if (cancelled || typeof window === "undefined") {
-          return;
-        }
+      if (!cancelled && typeof window !== "undefined") {
         const w = window as Window & { __PD_MAP_READY_MS?: number };
         w.__PD_MAP_READY_MS = Math.round(performance.now());
-      });
+      }
     }
 
     function startInit() {

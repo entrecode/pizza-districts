@@ -3,14 +3,15 @@ import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
 const sans = Inter({
-  subsets: ["latin", "latin-ext"],
+  // Latin-only keeps the critical font payload small for mobile LH; add latin-ext via ADR when i18n needs it.
+  subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
   preload: true,
 });
 
 const display = Space_Grotesk({
-  subsets: ["latin", "latin-ext"],
+  subsets: ["latin"],
   variable: "--font-display",
   display: "swap",
   preload: false,
