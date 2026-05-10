@@ -16,6 +16,7 @@ env:
   NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
   NEXT_PUBLIC_SITE_URL: http://localhost:3000
   NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY: ci-placeholder
+  NEXT_PUBLIC_GOOGLE_MAPS_STYLE_ID: ci-placeholder
   SUPABASE_SERVICE_ROLE_KEY: ci-placeholder
   GOOGLE_PLACES_SERVER_KEY: ci-placeholder
 
@@ -41,3 +42,92 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+
+  # /play mobile perf-budget + Lighthouse gate (PIZ-16).
+  # Required check on every PR. Asserts ADR-0004 §1 budgets:
+  #   - own JS gz ≤ 180 KB (+10% slack)
+  #   - Maps JS gz ≤ 280 KB (+10% slack) — skipped when Maps JS never loads
+  #   - first map paint ≤ 2.5 s (+10% slack) — skipped when Maps JS never loads
+  #   - Lighthouse mobile performance ≥ 0.85
+  # Trace + Lighthouse HTML reports upload as artifacts so engineers can
+  # debug regressions when the gate fails.
+  perf-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: verify
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile=false
+
+      - name: Install Chromium for Playwright
+        run: pnpm --filter @pd/perf exec playwright install --with-deps chromium
+
+      # Production build of the web app. Synthetic NEXT_PUBLIC_*/SUPABASE_*
+      # env values come from the workflow-level `env:` block above. Sentry
+      # upload is skipped (no SENTRY_AUTH_TOKEN here), so the wrapper no-ops.
+      - name: Build apps/web
+        run: pnpm --filter @pd/web build
+
+      # Start `next start` in the background. We hand-roll this rather than
+      # let Playwright's webServer manage it so the same server feeds both
+      # the budget test and the Lighthouse run.
+      - name: Start web server
+        run: |
+          pnpm --filter @pd/web start > /tmp/web-server.log 2>&1 &
+          echo $! > /tmp/web-server.pid
+          npx --yes wait-on -t 60000 http://127.0.0.1:3000/play
+
+      - name: Playwright transfer-size budget
+        env:
+          PERF_USE_RUNNING_SERVER: "1"
+          PERF_BASE_URL: http://127.0.0.1:3000
+        run: pnpm --filter @pd/perf test:budget
+
+      - name: Lighthouse mobile (≥ 0.85 on /play)
+        env:
+          PERF_BASE_URL: http://127.0.0.1:3000
+        run: pnpm --filter @pd/perf test:lighthouse
+
+      - name: Stop web server
+        if: always()
+        run: |
+          if [ -f /tmp/web-server.pid ]; then
+            kill "$(cat /tmp/web-server.pid)" 2>/dev/null || true
+          fi
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-playwright-report
+          path: packages/perf/playwright-report
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload Lighthouse report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-lighthouse-report
+          path: packages/perf/lhci-output
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload web server log (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-web-server-log
+          path: /tmp/web-server.log
+          if-no-files-found: ignore
+          retention-days: 7
