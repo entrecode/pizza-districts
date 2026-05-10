@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import { TelemetryBoot } from "@/lib/telemetry/boot";
 
 const sans = Inter({
   subsets: ["latin", "latin-ext"],
@@ -41,7 +42,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${sans.variable} ${display.variable} ${mono.variable}`}>
-      <body>{children}</body>
+      <body>
+        <TelemetryBoot />
+        {children}
+      </body>
     </html>
   );
 }
