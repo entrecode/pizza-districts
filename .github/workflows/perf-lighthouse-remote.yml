@@ -4,13 +4,29 @@
 # - Repo secret VERCEL_AUTOMATION_BYPASS_SECRET must match Vercel → Deployment Protection →
 #   Protection Bypass for Automation (same string in both places).
 # - packages/perf/lighthouserc.cjs: 3 runs, 375×812, optional bypass headers + cookie.
+#
+# --- Dispatch options (no GitHub UI required) ---
+#
+# A) REST workflow_dispatch (classic PAT: "workflow" scope; fine-grained: Actions write):
+#    curl -sS -L -X POST \
+#      -H "Accept: application/vnd.github+json" \
+#      -H "Authorization: Bearer $GITHUB_TOKEN" \
+#      https://api.github.com/repos/entrecode/pizza-districts/actions/workflows/perf-lighthouse-remote.yml/dispatches \
+#      -d '{"ref":"main","inputs":{"perf_preview_url":"https://YOUR-PREVIEW.vercel.app"}}'
+#
+# B) repository_dispatch (classic PAT: "repo"; fine-grained: Contents read + Metadata):
+#    curl -sS -L -X POST \
+#      -H "Accept: application/vnd.github+json" \
+#      -H "Authorization: Bearer $GITHUB_TOKEN" \
+#      https://api.github.com/repos/entrecode/pizza-districts/dispatches \
+#      -d '{"event_type":"perf-lighthouse-remote","client_payload":{"perf_preview_url":"https://YOUR-PREVIEW.vercel.app"}}'
+#
+# C) Browser: https://github.com/entrecode/pizza-districts/actions/workflows/perf-lighthouse-remote.yml
+# D) CLI: gh workflow run "Perf — Lighthouse remote" -R entrecode/pizza-districts -f perf_preview_url='https://…'
 
 name: Perf — Lighthouse remote
 
-# Dispatch (browser): https://github.com/entrecode/pizza-districts/actions/workflows/perf-lighthouse-remote.yml
-# CLI: gh workflow run "Perf — Lighthouse remote" -R entrecode/pizza-districts -f perf_preview_url='https://….vercel.app'
-
-run-name: "LH remote ${{ github.event.inputs.perf_preview_url }}"
+run-name: "LH remote ${{ github.event.inputs.perf_preview_url || github.event.client_payload.perf_preview_url || 'unknown' }}"
 
 on:
   workflow_dispatch:
@@ -19,6 +35,8 @@ on:
         description: "Preview base URL (no trailing slash), e.g. https://….vercel.app"
         required: true
         type: string
+  repository_dispatch:
+    types: [perf-lighthouse-remote]
 
 concurrency:
   group: perf-lighthouse-remote-${{ github.ref }}
@@ -28,7 +46,16 @@ jobs:
   lighthouse:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      PERF_BASE_URL: ${{ github.event.inputs.perf_preview_url || github.event.client_payload.perf_preview_url }}
     steps:
+      - name: Require preview base URL
+        run: |
+          if [ -z "${PERF_BASE_URL}" ]; then
+            echo "::error::Missing perf_preview_url. Use workflow_dispatch input or repository_dispatch client_payload.perf_preview_url."
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
@@ -55,7 +82,6 @@ jobs:
 
       - name: Lighthouse CI (preview /play)
         env:
-          PERF_BASE_URL: ${{ github.event.inputs.perf_preview_url }}
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: pnpm --filter @pd/perf test:lighthouse
 
