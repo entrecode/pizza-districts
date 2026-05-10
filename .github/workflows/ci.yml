@@ -131,3 +131,43 @@ jobs:
           path: /tmp/web-server.log
           if-no-files-found: ignore
           retention-days: 7
+
+  # Prod-targeted build with Sentry source-map upload (PIZ-65).
+  # Runs on push-to-main and on PRs from release/* branches. The Sentry
+  # plugin no-ops when SENTRY_AUTH_TOKEN/ORG/PROJECT are unset, so PRs
+  # from forks are safe.
+  build-with-sentry:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && startsWith(github.head_ref, 'release/'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: verify
+    env:
+      # Release identifier — must match the runtime SDK init (see
+      # apps/web/lib/sentry/release.ts). Vercel sets VERCEL_GIT_COMMIT_SHA
+      # in real deploys; in CI we use the GitHub SHA explicitly.
+      SENTRY_RELEASE: ${{ github.sha }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+      NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile=false
+
+      # Synthetic NEXT_PUBLIC_* + SUPABASE_* placeholders are inherited from
+      # the workflow-level `env:` block above. The withSentryConfig wrapper
+      # uploads source maps automatically when SENTRY_AUTH_TOKEN/ORG/PROJECT
+      # are all set; otherwise it is a no-op build.
+      - name: Build (uploads source maps when SENTRY_AUTH_TOKEN is set)
+        run: pnpm build

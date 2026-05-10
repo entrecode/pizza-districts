@@ -29,6 +29,20 @@ export default tseslint.config(
       "@typescript-eslint/consistent-type-imports": "warn",
     },
   },
+  // Build-time / config files run on Node — give them the Node globals so
+  // process / __dirname / Buffer don't trip no-undef. Keeps app/runtime
+  // code (browser by default) honest about its imports.
+  {
+    files: [
+      "**/*.config.{js,mjs,cjs,ts}",
+      "apps/web/instrumentation.ts",
+      "apps/web/sentry.*.config.{ts,js}",
+      "scripts/**/*.{js,mjs,cjs,ts}",
+    ],
+    languageOptions: {
+      globals: { ...globals.node },
+    },
+  },
   // ADR-0001 §7 — admin and game route trees must not import from each other.
   // Tightened on PIZ-8 per CEO acceptance on PIZ-4: enforce now, do not wait
   // for the first violation. The `(group)` parens are the App Router route
