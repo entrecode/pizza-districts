@@ -23,6 +23,7 @@
 #
 # C) Browser: https://github.com/entrecode/pizza-districts/actions/workflows/perf-lighthouse-remote.yml
 # D) CLI: gh workflow run "Perf — Lighthouse remote" -R entrecode/pizza-districts -f perf_preview_url='https://…'
+# E) Script: GITHUB_TOKEN=… ./scripts/dispatch-perf-lighthouse-remote.sh 'https://…'
 
 name: Perf — Lighthouse remote
 
