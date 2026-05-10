@@ -7,18 +7,21 @@ import { NextResponse } from "next/server";
 // row 16 is green when the resulting Sentry event shows decoded frames that
 // map back to this file (TS source, not the bundled .next/server output).
 //
-// Path is intentionally underscore-prefixed to keep it out of marketing
-// crawls. It is also gated by:
-//   1. Bearer token equal to SENTRY_SMOKE_TOKEN, OR
-//   2. NEXT_PUBLIC_SENTRY_SMOKE_ENABLED === "1" in non-prod environments.
-// In prod (VERCEL_ENV=production), the token is required — never the flag.
+// Privacy:
+//   - Auth-gated: Bearer token equal to SENTRY_SMOKE_TOKEN (required in prod),
+//     OR NEXT_PUBLIC_SENTRY_SMOKE_ENABLED === "1" in non-prod environments.
+//   - `<meta name="robots" content="noindex">` is applied at app level; this
+//     route also returns 404 to anonymous callers so it leaks no signal.
+//   - NOTE: an earlier version sat at `/api/_sentry-smoke`. Next.js treats
+//     directories prefixed with `_` as PRIVATE folders and excludes them from
+//     routing, so the route never deployed. Path is now `/api/sentry-smoke`.
 //
 // QA one-liners:
-//   curl -H "Authorization: Bearer $TOKEN" https://<host>/api/_sentry-smoke?kind=throw
-//   curl -H "Authorization: Bearer $TOKEN" https://<host>/api/_sentry-smoke?kind=reject
+//   curl -H "Authorization: Bearer $TOKEN" https://<host>/api/sentry-smoke?kind=throw
+//   curl -H "Authorization: Bearer $TOKEN" https://<host>/api/sentry-smoke?kind=reject
 //
 // Browser console (when SENTRY_SMOKE_ENABLED=1 in dev/preview):
-//   await fetch("/api/_sentry-smoke?kind=throw")
+//   await fetch("/api/sentry-smoke?kind=throw")
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";

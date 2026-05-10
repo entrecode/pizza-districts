@@ -10,15 +10,15 @@ gate. Source files: `apps/web/sentry.{client,server,edge}.config.ts`,
 
 When ops creates the Sentry project, set these and nothing more:
 
-| Variable                    | Where                              | Notes                                                      |
-| --------------------------- | ---------------------------------- | ---------------------------------------------------------- |
-| `NEXT_PUBLIC_SENTRY_DSN`    | Vercel + GitHub Actions secrets    | Browser DSN, exposed in client bundle.                     |
-| `SENTRY_DSN`                | Vercel + GitHub Actions secrets    | Server-side DSN. Usually equal to the public DSN.          |
-| `SENTRY_AUTH_TOKEN`         | GitHub Actions secret only         | Build-time source-map upload. Never expose to runtime.     |
-| `SENTRY_ORG`                | GitHub Actions repo variable       | e.g. `pizza-districts`.                                    |
-| `SENTRY_PROJECT`            | GitHub Actions repo variable       | e.g. `web`.                                                |
-| `SENTRY_RELEASE` (optional) | CI step only                       | Defaults to `github.sha` in the build-with-sentry job.     |
-| `SENTRY_SMOKE_TOKEN`        | Vercel prod env (rotate per cycle) | Required to fire `/api/_sentry-smoke` against prod builds. |
+| Variable                    | Where                              | Notes                                                     |
+| --------------------------- | ---------------------------------- | --------------------------------------------------------- |
+| `NEXT_PUBLIC_SENTRY_DSN`    | Vercel + GitHub Actions secrets    | Browser DSN, exposed in client bundle.                    |
+| `SENTRY_DSN`                | Vercel + GitHub Actions secrets    | Server-side DSN. Usually equal to the public DSN.         |
+| `SENTRY_AUTH_TOKEN`         | GitHub Actions secret only         | Build-time source-map upload. Never expose to runtime.    |
+| `SENTRY_ORG`                | GitHub Actions repo variable       | e.g. `pizza-districts`.                                   |
+| `SENTRY_PROJECT`            | GitHub Actions repo variable       | e.g. `web`.                                               |
+| `SENTRY_RELEASE` (optional) | CI step only                       | Defaults to `github.sha` in the build-with-sentry job.    |
+| `SENTRY_SMOKE_TOKEN`        | Vercel prod env (rotate per cycle) | Required to fire `/api/sentry-smoke` against prod builds. |
 
 The `withSentryConfig` plugin is a no-op when `SENTRY_AUTH_TOKEN` /
 `SENTRY_ORG` / `SENTRY_PROJECT` are absent — PRs from forks and dev builds
@@ -71,12 +71,12 @@ In a build with `SENTRY_SMOKE_TOKEN` set:
 
 ```sh
 curl -i -H "Authorization: Bearer $SENTRY_SMOKE_TOKEN" \
-  "https://<host>/api/_sentry-smoke?kind=throw"
+  "https://<host>/api/sentry-smoke?kind=throw"
 ```
 
 Expected: HTTP 500 from the route, a Sentry event in the project tagged
 with the build's release identifier, and decoded frames pointing back at
-`apps/web/app/api/_sentry-smoke/route.ts`.
+`apps/web/app/api/sentry-smoke/route.ts`.
 
 For preview/dev builds without a token, set
 `NEXT_PUBLIC_SENTRY_SMOKE_ENABLED=1` to allow unauthenticated smoke fires.
