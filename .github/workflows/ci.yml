@@ -49,12 +49,22 @@ jobs:
   #   - Maps JS gz ≤ 280 KB (+10% slack) — skipped when Maps JS never loads
   #   - first map paint ≤ 2.5 s (+10% slack) — skipped when Maps JS never loads
   #   - Lighthouse mobile performance ≥ 0.85
+  #
+  # Maps assertions run when repo Actions secrets supply real browser key + map ID
+  # (and Places key for snapshot routes that call Google). See docs/google-cloud-keys.md
+  # and PIZ-15. Missing secrets → ci-placeholder → skips (unchanged).
   # Trace + Lighthouse HTML reports upload as artifacts so engineers can
   # debug regressions when the gate fails.
   perf-gate:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: verify
+    env:
+      # Fall back to workflow-level ci-placeholder when secrets are unset (fork PRs, pre-provision).
+      # `||` keeps Zod happy — empty string would fail client env `.min(1).optional()` on parse.
+      NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY || 'ci-placeholder' }}
+      NEXT_PUBLIC_GOOGLE_MAPS_STYLE_ID: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_STYLE_ID || 'ci-placeholder' }}
+      GOOGLE_PLACES_SERVER_KEY: ${{ secrets.GOOGLE_PLACES_SERVER_KEY || 'ci-placeholder' }}
     steps:
       - uses: actions/checkout@v4
 

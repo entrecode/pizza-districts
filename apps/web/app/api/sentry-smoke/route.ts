@@ -51,17 +51,13 @@ export async function GET(request: Request) {
   const kind = url.searchParams.get("kind") ?? "throw";
 
   if (kind === "reject") {
-    const err = new Error(
-      `piz-65 smoke: rejected promise at ${new Date().toISOString()}`,
-    );
+    const err = new Error(`piz-65 smoke: rejected promise at ${new Date().toISOString()}`);
     Sentry.captureException(err, { tags: { sentry_smoke: "reject" } });
     await Sentry.flush(2000);
     return Promise.reject(err);
   }
 
-  const err = new Error(
-    `piz-65 smoke: thrown error at ${new Date().toISOString()}`,
-  );
+  const err = new Error(`piz-65 smoke: thrown error at ${new Date().toISOString()}`);
   Sentry.captureException(err, { tags: { sentry_smoke: "throw" } });
   await Sentry.flush(2000);
   throw err;
