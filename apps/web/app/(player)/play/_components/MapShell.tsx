@@ -23,6 +23,8 @@ export function MapShell({ parcelId }: { parcelId: string }) {
     let cancelled = false;
     const markers: google.maps.marker.AdvancedMarkerElement[] = [];
     let clusterer: MarkerClusterer | null = null;
+    let idleCallbackId: number | undefined;
+    let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
     async function init() {
       if (!containerRef.current) {
@@ -51,7 +53,13 @@ export function MapShell({ parcelId }: { parcelId: string }) {
       if (!res.ok) {
         throw new Error(`snapshot ${res.status}`);
       }
+      if (cancelled) {
+        return;
+      }
       const snapshot = (await res.json()) as ParcelSnapshotResponse;
+      if (cancelled) {
+        return;
+      }
       map.setCenter(snapshot.center);
 
       const { MarkerClusterer, SuperClusterAlgorithm } = await import("@googlemaps/markerclusterer");
@@ -83,14 +91,29 @@ export function MapShell({ parcelId }: { parcelId: string }) {
       }
     }
 
-    void init().catch(() => {
-      if (!cancelled) {
-        setHint("Could not initialize the map. Check the browser key and network.");
-      }
-    });
+    function startInit() {
+      void init().catch(() => {
+        if (!cancelled) {
+          setHint("Could not initialize the map. Check the browser key and network.");
+        }
+      });
+    }
+
+    /** Defer Maps + clusterer so first paint / Lighthouse TBT are not dominated by API bootstrap. */
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      idleCallbackId = window.requestIdleCallback(startInit, { timeout: 600 });
+    } else {
+      timeoutHandle = setTimeout(startInit, 0);
+    }
 
     return () => {
       cancelled = true;
+      if (idleCallbackId !== undefined && typeof window !== "undefined" && "cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idleCallbackId);
+      }
+      if (timeoutHandle !== null) {
+        clearTimeout(timeoutHandle);
+      }
       clusterer?.clearMarkers();
       markers.length = 0;
     };

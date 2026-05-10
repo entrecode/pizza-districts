@@ -1,11 +1,7 @@
-"use client";
-
 import Link from "next/link";
-import { usePlayStore } from "@/lib/stores/play-store";
+import { PlayHudSelection } from "./PlayHudSelection";
 
 export function PlayHud({ parcelId }: { parcelId: string }) {
-  const selected = usePlayStore((s) => s.selectedParcelId);
-
   return (
     <header className="relative z-10 flex flex-col gap-2 border-b border-border bg-surface/95 px-4 py-3 backdrop-blur-sm">
       <div className="flex items-center justify-between gap-2">
@@ -16,12 +12,7 @@ export function PlayHud({ parcelId }: { parcelId: string }) {
       </div>
       <p className="text-caption text-text-muted">
         Parcel <span className="font-mono text-mono-sm text-text">{parcelId}</span>
-        {selected ? (
-          <>
-            {" "}
-            · selected <span className="font-mono text-mono-sm text-text">{selected}</span>
-          </>
-        ) : null}
+        <PlayHudSelection />
       </p>
     </header>
   );
