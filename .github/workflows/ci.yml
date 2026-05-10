@@ -13,7 +13,7 @@ env:
   # Synthetic placeholder envs so eager Zod parsing in lib/env/* doesn't trip
   # typecheck/lint loads. Real values are supplied in Vercel/Supabase, never here.
   NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder
   NEXT_PUBLIC_SITE_URL: http://localhost:3000
   NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY: ci-placeholder
   NEXT_PUBLIC_GOOGLE_MAPS_STYLE_ID: ci-placeholder

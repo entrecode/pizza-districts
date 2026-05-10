@@ -5,7 +5,7 @@ import { resolvePublicSiteUrl } from "./resolve-public-site-url";
 // Importing this file from a server component is fine; the reverse is not.
 const ClientEnv = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
   NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY: z.string().min(1).optional(),
   /** Cloud Map ID (vector basemap + AdvancedMarker). See ADR-0004 §1. */
   NEXT_PUBLIC_GOOGLE_MAPS_STYLE_ID: z.string().min(1).optional(),
@@ -14,7 +14,7 @@ const ClientEnv = z.object({
 
 export const clientEnv = ClientEnv.parse({
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY: process.env.NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY,
   NEXT_PUBLIC_GOOGLE_MAPS_STYLE_ID: process.env.NEXT_PUBLIC_GOOGLE_MAPS_STYLE_ID,
   NEXT_PUBLIC_SITE_URL: resolvePublicSiteUrl(process.env),

@@ -11,12 +11,12 @@ import { env } from "@/lib/env/server";
 type CookieMutation = { name: string; value: string; options: CookieOptions };
 
 // Cookie-bound server client for server components, route handlers, middleware.
-// Uses the anon key + RLS so calls are still scoped to the current session.
+// Uses the publishable (RLS-protected) key so calls stay scoped to the current session.
 export async function createServerClient() {
   const cookieStore = await cookies();
   return supabaseCreateServerClient(
     env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
       cookies: {
         getAll() {
