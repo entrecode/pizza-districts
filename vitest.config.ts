@@ -5,6 +5,7 @@ export default defineConfig({
     include: ["packages/**/*.{test,spec}.{ts,tsx}", "apps/**/*.{test,spec}.{ts,tsx}"],
     exclude: ["**/node_modules/**", "**/.next/**", "**/dist/**", "**/build/**"],
     environment: "node",
+    environmentMatchGlobs: [["**/*.dom.test.{ts,tsx}", "happy-dom"]],
     passWithNoTests: false,
   },
 });
