@@ -30,11 +30,14 @@ export function PlayPageBody() {
 
       <section
         aria-label="Map surface"
-        className="relative mx-5 flex-1 overflow-hidden rounded-card border border-border bg-surface-muted"
+        className="relative mx-5 min-h-0 flex-1 overflow-hidden rounded-card border border-border bg-surface-muted"
       >
-        <Suspense fallback={<MapTileFallback />}>
-          <MapShell />
-        </Suspense>
+        {/* Fill flex-1 slot: h-full inside a plain flex child is unreliable cross-browser; pin map layer to section box */}
+        <div className="absolute inset-0">
+          <Suspense fallback={<MapTileFallback />}>
+            <MapShell />
+          </Suspense>
+        </div>
       </section>
 
       <footer className="grid grid-cols-3 gap-2 px-5 py-4">
