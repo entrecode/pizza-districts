@@ -23,7 +23,9 @@ export function PlayPageBody() {
     <main className="relative flex min-h-dvh flex-col bg-surface text-text">
       <header className="flex items-center justify-between px-5 py-4">
         <p className="text-label uppercase tracking-wide text-text-muted">Pizza Districts</p>
-        <span className="rounded-pill bg-surface-muted px-3 py-1 text-caption text-text-muted">Phase 1</span>
+        <span className="rounded-pill bg-surface-muted px-3 py-1 text-caption text-text-muted">
+          Phase 1
+        </span>
       </header>
 
       <section

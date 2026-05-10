@@ -69,7 +69,8 @@ export function MapShell({ parcelId = "phase1-demo" }: MapShellProps) {
         const { Map } = await importLibrary("maps");
         const { AdvancedMarkerElement } = await importLibrary("marker");
 
-        const { MarkerClusterer, SuperClusterAlgorithm } = await import("@googlemaps/markerclusterer");
+        const { MarkerClusterer, SuperClusterAlgorithm } =
+          await import("@googlemaps/markerclusterer");
 
         if (cancelled) return;
 
@@ -142,7 +143,12 @@ export function MapShell({ parcelId = "phase1-demo" }: MapShellProps) {
 
   return (
     <div className="relative h-full min-h-[12rem] w-full">
-      <div ref={rootRef} className="absolute inset-0" aria-label="District map" role="application" />
+      <div
+        ref={rootRef}
+        className="absolute inset-0"
+        aria-label="District map"
+        role="application"
+      />
 
       {mode === "loading" ? (
         <div
@@ -160,9 +166,10 @@ export function MapShell({ parcelId = "phase1-demo" }: MapShellProps) {
           <div className="max-w-[18rem]">
             <p className="font-display text-h3">Map offline</p>
             <p className="mt-2 text-body text-text-muted">
-              Set <code className="font-mono text-mono-sm">NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY</code> and{" "}
-              <code className="font-mono text-mono-sm">NEXT_PUBLIC_GOOGLE_MAPS_STYLE_ID</code> to load the vector
-              basemap (skipped in CI).
+              Set{" "}
+              <code className="font-mono text-mono-sm">NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY</code>{" "}
+              and <code className="font-mono text-mono-sm">NEXT_PUBLIC_GOOGLE_MAPS_STYLE_ID</code>{" "}
+              to load the vector basemap (skipped in CI).
             </p>
           </div>
         </div>
@@ -170,7 +177,9 @@ export function MapShell({ parcelId = "phase1-demo" }: MapShellProps) {
 
       {mode === "error" ? (
         <div className="absolute inset-0 grid place-items-center bg-surface-muted p-6 text-center">
-          <p className="text-body text-danger">Could not initialize the map. Check the browser console.</p>
+          <p className="text-body text-danger">
+            Could not initialize the map. Check the browser console.
+          </p>
         </div>
       ) : null}
     </div>
