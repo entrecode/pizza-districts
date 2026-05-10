@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { resolvePublicSiteUrl } from "./resolve-public-site-url";
 
 // Client-safe env. Only NEXT_PUBLIC_* vars belong here.
 // Importing this file from a server component is fine; the reverse is not.
@@ -16,5 +17,5 @@ export const clientEnv = ClientEnv.parse({
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY: process.env.NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY,
   NEXT_PUBLIC_GOOGLE_MAPS_STYLE_ID: process.env.NEXT_PUBLIC_GOOGLE_MAPS_STYLE_ID,
-  NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+  NEXT_PUBLIC_SITE_URL: resolvePublicSiteUrl(process.env),
 });

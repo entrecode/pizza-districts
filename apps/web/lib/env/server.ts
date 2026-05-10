@@ -5,7 +5,9 @@ import { clientEnv } from "./client";
 // Server env. Includes secrets that must never reach the browser.
 // `import "server-only"` makes a client import a build error.
 const ServerEnv = z.object({
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  // Validated when createServiceRoleClient() runs — not at module load — so
+  // `next build` succeeds before every server-only secret is wired in Vercel.
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
   GOOGLE_PLACES_SERVER_KEY: z.string().min(1).optional(),
 });
 

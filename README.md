@@ -50,10 +50,10 @@ Defined in `.env.example`. Copy to `.env.local` and fill in.
 | ------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------- |
 | `NEXT_PUBLIC_SUPABASE_URL`            | browser+server  | Supabase project URL.                                                                          |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY`       | browser+server  | Anon key. RLS-protected, OK to ship.                                                           |
-| `SUPABASE_SERVICE_ROLE_KEY`           | **server only** | Bypasses RLS. Must never reach the browser. Loaded via `lib/env/server.ts` with `server-only`. |
+| `SUPABASE_SERVICE_ROLE_KEY`           | **server only** | Bypasses RLS. Must never reach the browser. Required when code calls `createServiceRoleClient()`; optional at build time until that path exists. |
 | `NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY` | browser         | Maps JS SDK only. Must be HTTP-referrer-restricted to our domains in Google Cloud Console.     |
 | `GOOGLE_PLACES_SERVER_KEY`            | **server only** | Places API. Used only by `app/api/places/*` route handlers and Edge Functions. IP-restricted.  |
-| `NEXT_PUBLIC_SITE_URL`                | browser+server  | Public URL for Supabase auth redirects. `http://localhost:3000` for local dev.                 |
+| `NEXT_PUBLIC_SITE_URL`                | browser+server  | Public URL for Supabase auth redirects. Local: `http://localhost:3000`. On Vercel, if unset, the app uses `https://$VERCEL_URL`; set explicitly for a custom domain so Supabase redirect URLs match. |
 
 `NEXT_PUBLIC_*` vars are inlined into the browser bundle. **Anything without that prefix is server-only.** CI must never echo populated values into logs.
 

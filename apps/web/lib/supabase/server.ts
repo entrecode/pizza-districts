@@ -35,7 +35,13 @@ export async function createServerClient() {
 // Service-role client. Bypasses RLS — never expose to a client component tree.
 // Use only from app/api/* route handlers, Edge Functions, or admin-gated server code.
 export function createServiceRoleClient() {
-  return createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+  const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey) {
+    throw new Error(
+      "SUPABASE_SERVICE_ROLE_KEY is required for createServiceRoleClient(). Add it under Vercel → Project Settings → Environment Variables (server-side, never NEXT_PUBLIC_).",
+    );
+  }
+  return createClient(env.NEXT_PUBLIC_SUPABASE_URL, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
