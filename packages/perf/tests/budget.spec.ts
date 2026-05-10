@@ -77,7 +77,8 @@ test.describe("PIZ-73 /play perf budget", () => {
     await page.goto("/play?parcel=demo-parcel", { waitUntil: "domcontentloaded" });
     await page.getByRole("region", { name: "District map" }).waitFor({ state: "visible" });
 
-    let firstMapPaintMs: number | null = null;
+    /** Milliseconds since navigation start when MapShell sets `window.__PD_MAP_READY_MS` (first map `idle`). */
+    let mapReadyMs: number | null = null;
     let mapsRequestsObserved = 0;
     let mapsJsBytes = 0;
     let measurement: "resource-timing-encoded" | "response-body-fallback" | "n/a" = "n/a";
@@ -88,7 +89,7 @@ test.describe("PIZ-73 /play perf budget", () => {
     if (bootstrap === "ready") {
       await sleep(2500);
 
-      firstMapPaintMs = await page.evaluate(() => {
+      mapReadyMs = await page.evaluate(() => {
         const w = window as Window & { __PD_MAP_READY_MS?: number };
         return w.__PD_MAP_READY_MS ?? null;
       });
@@ -125,8 +126,8 @@ test.describe("PIZ-73 /play perf budget", () => {
 
       expect(mapsRequestsObserved, "mapsRequestsObserved").toBeGreaterThan(0);
       expect(mapsJsBytes, "mapsJsBytes gz budget").toBeLessThanOrEqual(maxJs);
-      expect(firstMapPaintMs, "firstMapPaintMs").not.toBeNull();
-      expect(firstMapPaintMs!, "firstMapPaintMs budget").toBeLessThanOrEqual(maxPaint);
+      expect(mapReadyMs, "mapReadyMs (__PD_MAP_READY_MS)").not.toBeNull();
+      expect(mapReadyMs!, "mapReadyMs budget").toBeLessThanOrEqual(maxPaint);
 
       if (!envMapsConfigured) {
         notes.push(
@@ -143,7 +144,7 @@ test.describe("PIZ-73 /play perf budget", () => {
           "Playwright env had non-placeholder NEXT_PUBLIC_GOOGLE_MAPS_* but the running build did not load Maps — rebuild web with the same keys you export for the perf run.",
         );
       }
-      firstMapPaintMs = null;
+      mapReadyMs = null;
       mapsRequestsObserved = 0;
       mapsJsBytes = 0;
     }
@@ -153,11 +154,13 @@ test.describe("PIZ-73 /play perf budget", () => {
       mapsBootstrapObserved: bootstrap,
       mapsRequestsObserved,
       mapsJsBytes,
-      firstMapPaintMs,
+      mapReadyMs,
+      firstMapPaintMs: mapReadyMs,
       measurement: bootstrap === "ready" ? measurement : "n/a",
       notes,
       budgets: {
         mapsJsBytesGzMax: Math.floor(MAPS_JS_BUDGET_BYTES_GZ * BUDGET_TOLERANCE),
+        mapReadyMsMax: Math.floor(FIRST_MAP_PAINT_BUDGET_MS * BUDGET_TOLERANCE),
         firstMapPaintMsMax: Math.floor(FIRST_MAP_PAINT_BUDGET_MS * BUDGET_TOLERANCE),
       },
     });

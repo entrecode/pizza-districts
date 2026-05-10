@@ -85,10 +85,14 @@ export function MapShell({ parcelId }: { parcelId: string }) {
         algorithm: new SuperClusterAlgorithm({}),
       });
 
-      if (typeof window !== "undefined") {
+      /** Perf harness (PIZ-73 / PIZ-89): time-to-interactive map signal — FCP/FP fire before Maps; use first `idle` after bootstrap. */
+      google.maps.event.addListenerOnce(map, "idle", () => {
+        if (cancelled || typeof window === "undefined") {
+          return;
+        }
         const w = window as Window & { __PD_MAP_READY_MS?: number };
         w.__PD_MAP_READY_MS = Math.round(performance.now());
-      }
+      });
     }
 
     function startInit() {
