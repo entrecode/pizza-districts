@@ -1,9 +1,15 @@
 const baseURL = process.env.PERF_BASE_URL ?? "http://127.0.0.1:3000";
+const vercelBypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+
+/** @type {Record<string, string>} */
+const extraHeaders = vercelBypass
+  ? { "x-vercel-protection-bypass": vercelBypass }
+  : {};
 
 module.exports = {
   ci: {
     collect: {
-      numberOfRuns: 1,
+      numberOfRuns: 3,
       url: [`${baseURL.replace(/\/$/, "")}/play`],
       settings: {
         formFactor: "mobile",
@@ -14,6 +20,7 @@ module.exports = {
           deviceScaleFactor: 2,
           disabled: false,
         },
+        ...(Object.keys(extraHeaders).length > 0 ? { extraHeaders } : {}),
       },
     },
     assert: {
